@@ -1,0 +1,2230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quotex Autonomous Paper-Trading & Self-Optimizing Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --bg-card: rgba(14, 18, 28, 0.85);
+      --bg-card-hover: rgba(20, 26, 40, 0.95);
+      --border-color: rgba(36, 47, 72, 0.8);
+      --border-glow: rgba(0, 240, 255, 0.25);
+      
+      --neon-cyan: #00f0ff;
+      --neon-green: #00ff88;
+      --neon-red: #ff3366;
+      --neon-gold: #ffb800;
+      --neon-purple: #9d4edd;
+      
+      --text-main: #f0f4fc;
+      --text-muted: #8391a8;
+      --text-dim: #4b586e;
+      
+      --call-color: #00ff88;
+      --put-color: #ff3366;
+      --skip-color: #ffb800;
+      
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(157, 78, 221, 0.04) 0%, transparent 40%),
+        linear-gradient(180deg, #07090e 0%, #0a0d14 100%);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .font-brand {
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.5px;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      background: rgba(10, 14, 22, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #00f0ff, #00ff88);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 900;
+      color: #07090e;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+    }
+
+    .logo-title h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      background: linear-gradient(90deg, #ffffff, #00f0ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-title p {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00f0ff, #00a8ff);
+      color: #07090e;
+      border-color: #00f0ff;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.3);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(26, 35, 52, 0.8);
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(38, 50, 74, 0.9);
+      border-color: var(--neon-cyan);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #00ff88, #00b862);
+      color: #07090e;
+      font-weight: 700;
+    }
+
+    .btn-danger {
+      background: rgba(255, 51, 102, 0.15);
+      border-color: rgba(255, 51, 102, 0.5);
+      color: var(--neon-red);
+    }
+
+    .btn-danger:hover {
+      background: rgba(255, 51, 102, 0.3);
+    }
+
+    .btn-icon {
+      padding: 8px;
+      border-radius: var(--radius-sm);
+      background: rgba(26, 35, 52, 0.8);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+    }
+
+    .btn-icon:hover {
+      color: var(--neon-cyan);
+      border-color: var(--neon-cyan);
+    }
+
+    /* Main Container */
+    .dashboard-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Target Status Banner */
+    .status-banner {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .status-banner::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--neon-gold);
+      transition: background 0.3s;
+    }
+
+    .status-banner.achieved::before {
+      background: var(--neon-green);
+      box-shadow: 0 0 15px var(--neon-green);
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      background: rgba(255, 184, 0, 0.15);
+      border: 1px solid rgba(255, 184, 0, 0.4);
+      color: var(--neon-gold);
+      animation: pulse-amber 2s infinite ease-in-out;
+    }
+
+    .status-pill.achieved {
+      background: rgba(0, 255, 136, 0.2);
+      border: 1px solid var(--neon-green);
+      color: var(--neon-green);
+      animation: glow-green 1.5s infinite alternate ease-in-out;
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+    }
+
+    @keyframes pulse-amber {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    @keyframes glow-green {
+      from { box-shadow: 0 0 5px rgba(0, 255, 136, 0.3); }
+      to { box-shadow: 0 0 18px rgba(0, 255, 136, 0.8); }
+    }
+
+    .status-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .status-desc strong {
+      color: var(--text-main);
+    }
+
+    /* Rolling 5 Visualizer */
+    .rolling-display {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .rolling-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    .rolling-badges {
+      display: flex;
+      gap: 6px;
+    }
+
+    .roll-pill {
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+      border: 1px solid var(--border-color);
+      background: rgba(20, 26, 40, 0.6);
+      color: var(--text-dim);
+      transition: all 0.3s;
+    }
+
+    .roll-pill.win {
+      background: rgba(0, 255, 136, 0.15);
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      box-shadow: 0 0 8px rgba(0, 255, 136, 0.3);
+    }
+
+    .roll-pill.loss {
+      background: rgba(255, 51, 102, 0.15);
+      border-color: var(--neon-red);
+      color: var(--neon-red);
+      box-shadow: 0 0 8px rgba(255, 51, 102, 0.3);
+    }
+
+    .roll-pill.draw {
+      background: rgba(255, 184, 0, 0.15);
+      border-color: var(--neon-gold);
+      color: var(--neon-gold);
+    }
+
+    .rolling-rate-badge {
+      font-size: 1.1rem;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: var(--radius-sm);
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      color: var(--neon-cyan);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .stat-card:hover {
+      border-color: var(--border-glow);
+      transform: translateY(-2px);
+    }
+
+    .stat-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .stat-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .badge-win { color: var(--neon-green); }
+    .badge-loss { color: var(--neon-red); }
+
+    /* Middle Layout: Video/Canvas Feed + AI Inspector */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 1100px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Video & Canvas Capture Card */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      padding: 14px 20px;
+      background: rgba(16, 22, 34, 0.7);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Video Feed Container */
+    .stream-container {
+      position: relative;
+      width: 100%;
+      height: 380px;
+      background: #000;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #streamVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+    }
+
+    #streamCanvas {
+      display: none;
+    }
+
+    .stream-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 20px;
+    }
+
+    .stream-placeholder svg {
+      width: 52px;
+      height: 52px;
+      color: var(--text-dim);
+    }
+
+    /* Auto-Cycle Controls Bar */
+    .controls-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(12, 16, 26, 0.6);
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    select, input[type="text"], input[type="number"] {
+      background: rgba(20, 26, 40, 0.9);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-family: inherit;
+      outline: none;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--neon-cyan);
+    }
+
+    /* Countdown Bar */
+    .countdown-widget {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .countdown-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(26, 35, 52, 0.6);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green));
+      transition: width 1s linear;
+    }
+
+    /* Active Trade Floating HUD */
+    .active-trade-box {
+      background: rgba(20, 26, 42, 0.9);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .active-trade-box.active {
+      display: flex;
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+    }
+
+    .at-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dir-tag {
+      font-weight: 800;
+      font-size: 0.85rem;
+      padding: 3px 10px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .dir-tag.CALL {
+      background: rgba(0, 255, 136, 0.2);
+      color: var(--call-color);
+      border: 1px solid var(--call-color);
+    }
+
+    .dir-tag.PUT {
+      background: rgba(255, 51, 102, 0.2);
+      color: var(--put-color);
+      border: 1px solid var(--put-color);
+    }
+
+    /* AI Decision & Vision Inspector Card */
+    .ai-decision-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .decision-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      background: rgba(16, 22, 34, 0.8);
+      border: 1px solid var(--border-color);
+    }
+
+    .decision-main {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .decision-badge {
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+
+    .badge-call { color: var(--call-color); }
+    .badge-put { color: var(--put-color); }
+    .badge-skip { color: var(--skip-color); }
+
+    .confidence-meter {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .confidence-val {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--neon-cyan);
+    }
+
+    .cropped-preview-box {
+      width: 100%;
+      height: 190px;
+      background: #000;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .cropped-preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .preview-overlay-tag {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .ai-rationale-box {
+      background: rgba(12, 16, 26, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      color: var(--text-main);
+    }
+
+    .ai-traits {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      font-size: 0.8rem;
+    }
+
+    .trait-item {
+      background: rgba(20, 26, 40, 0.6);
+      padding: 8px 12px;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      border: 1px solid rgba(36, 47, 72, 0.5);
+    }
+
+    .trait-label { color: var(--text-muted); }
+    .trait-val { font-weight: 700; color: var(--text-main); }
+
+    /* Trade Ledger Table */
+    .ledger-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .ledger-table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.84rem;
+    }
+
+    th {
+      background: rgba(16, 22, 34, 0.8);
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(36, 47, 72, 0.4);
+      color: var(--text-main);
+    }
+
+    tr:hover td {
+      background: rgba(25, 33, 50, 0.4);
+    }
+
+    .pill-win {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(0, 255, 136, 0.15);
+      color: var(--neon-green);
+      font-weight: 700;
+      border: 1px solid rgba(0, 255, 136, 0.3);
+    }
+
+    .pill-loss {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255, 51, 102, 0.15);
+      color: var(--neon-red);
+      font-weight: 700;
+      border: 1px solid rgba(255, 51, 102, 0.3);
+    }
+
+    .pill-draw {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255, 184, 0, 0.15);
+      color: var(--neon-gold);
+      font-weight: 700;
+      border: 1px solid rgba(255, 184, 0, 0.3);
+    }
+
+    /* Modal for Config */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #0f1420;
+      border: 1px solid var(--neon-cyan);
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.2);
+      border-radius: var(--radius-md);
+      width: 90%;
+      max-width: 540px;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      background: rgba(20, 26, 40, 0.9);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px 12px;
+    }
+
+    .modal-footer {
+      padding: 14px 20px;
+      background: rgba(16, 22, 34, 0.9);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="logo-group">
+      <div class="logo-icon font-brand">Q</div>
+      <div class="logo-title">
+        <h1 class="font-brand">QUOTEX VISION AGENT</h1>
+        <p>Autonomous Paper-Trading & Self-Optimizing Engine</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-icon" id="soundToggleBtn" title="Toggle Audio Chimes">
+        <span id="soundIcon">🔊</span>
+      </button>
+      <button class="btn btn-secondary" id="autoClickModalBtn" style="border-color: var(--neon-cyan); color: var(--neon-cyan); font-weight: 700;">
+        🎯 Quotex Auto-Clicker
+      </button>
+      <button class="btn btn-secondary" id="configBtn">
+        ⚙️ Settings & API
+      </button>
+      <button class="btn btn-danger" id="resetSessionBtn">
+        🔄 Reset Session
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="dashboard-container">
+
+    <!-- Target Benchmark Status Banner -->
+    <section class="status-banner" id="statusBanner">
+      <div class="status-left">
+        <div class="status-pill" id="statusPill">
+          <span id="statusIcon">⚡</span>
+          <span id="statusBadgeText">TRAINING / PRACTICING</span>
+        </div>
+        <div class="status-desc" id="statusDescription">
+          Collecting frames. Evaluating candle probability against rolling accuracy target (>= 80%).
+        </div>
+      </div>
+
+      <div class="rolling-display">
+        <span class="rolling-label">Rolling 5 Trades:</span>
+        <div class="rolling-badges" id="rollingBadges">
+          <div class="roll-pill font-mono">-</div>
+          <div class="roll-pill font-mono">-</div>
+          <div class="roll-pill font-mono">-</div>
+          <div class="roll-pill font-mono">-</div>
+          <div class="roll-pill font-mono">-</div>
+        </div>
+        <div class="rolling-rate-badge font-mono" id="rollingRateBadge">0.0%</div>
+      </div>
+    </section>
+
+    <!-- Key Metrics Grid -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-title">
+          <span>Virtual Balance</span>
+          <span>💼</span>
+        </div>
+        <div class="stat-value font-mono" id="statBalance">$10,000.00</div>
+        <div class="stat-sub font-mono" id="statPnl">PnL: +$0.00</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">
+          <span>Total Trades</span>
+          <span>📊</span>
+        </div>
+        <div class="stat-value font-mono" id="statTotalTrades">0</div>
+        <div class="stat-sub" id="statRecord">Wins: 0 | Losses: 0 | Draws: 0</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">
+          <span>All-Time Win Rate</span>
+          <span>🎯</span>
+        </div>
+        <div class="stat-value font-mono" id="statWinRate">0.0%</div>
+        <div class="stat-sub">Target Benchmark: 80% Win Rate</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-title">
+          <span>Strategy Strictness</span>
+          <span>🛡️</span>
+        </div>
+        <div class="stat-value font-mono" id="statStrictness">Level 3</div>
+        <div class="stat-sub" id="statStrictnessDesc">Selective / High Probability</div>
+      </div>
+    </section>
+
+    <!-- Center Workspace: Video Screen Capture + AI Decision Inspector -->
+    <div class="workspace-grid">
+
+      <!-- Left Column: Screen Share & Automation Controller -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>📺</span>
+            <span>Live Quotex Chart Ingestion</span>
+          </div>
+          <div>
+            <button class="btn btn-primary" id="shareScreenBtn">
+              📡 Share Quotex Tab
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <!-- Video Stream & Offscreen Canvas -->
+          <div class="stream-container" id="streamContainer">
+            <video id="streamVideo" autoplay playsinline muted></video>
+            <canvas id="streamCanvas"></canvas>
+            <div class="stream-placeholder" id="streamPlaceholder">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              <div>
+                <strong>No Active Video Stream</strong><br>
+                Click <em>"Share Quotex Tab"</em> above and select your Quotex demo chart window.
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Paper Trade Widget (When a trade is in progress) -->
+          <div class="active-trade-box" id="activeTradeBox">
+            <div class="at-header">
+              <span class="font-mono" style="font-size: 0.85rem; color: var(--text-muted);">ACTIVE PAPER TRADE</span>
+              <span class="dir-tag font-mono" id="atDirection">CALL</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">ENTRY PRICE:</span>
+                <span class="font-mono" style="font-size: 1.1rem; font-weight: 700;" id="atEntryPrice">1.08450</span>
+              </div>
+              <div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">EXPIRY IN:</span>
+                <span class="font-mono" style="font-size: 1.1rem; font-weight: 800; color: var(--neon-cyan);" id="atCountdown">60s</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" style="flex: 1; padding: 6px;" id="forceVerifyBtn">
+                ⚡ Force Verify Outcome Now
+              </button>
+            </div>
+          </div>
+
+          <!-- Candle Countdown Bar -->
+          <div class="countdown-widget">
+            <div class="countdown-header">
+              <span>Next Candle Cycle Trigger:</span>
+              <span class="font-mono" id="cycleSecondsRemaining">60s</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="cycleProgressBar"></div>
+            </div>
+          </div>
+
+          <!-- Automation Strip -->
+          <div class="controls-strip">
+            <div class="control-group">
+              <button class="btn btn-success" id="toggleAutoBtn">
+                ▶ Start Autonomous Agent
+              </button>
+              <button class="btn btn-secondary" id="triggerScanBtn">
+                🔍 Scan Now
+              </button>
+            </div>
+
+            <div class="control-group">
+              <span id="autoClickStatusBadge" class="font-mono" style="font-size: 0.76rem; padding: 5px 10px; border-radius: 4px; background: rgba(255, 51, 102, 0.15); color: var(--neon-red); border: 1px solid rgba(255,51,102,0.3); font-weight: 700;">
+                🖱️ AUTO-CLICK: OFF
+              </span>
+              <span class="control-label">Candle Timeframe:</span>
+              <select id="timeframeSelect">
+                <option value="15">15 Seconds</option>
+                <option value="30">30 Seconds</option>
+                <option value="60" selected>60s (1 Minute)</option>
+                <option value="120">2 Minutes</option>
+                <option value="300">5 Minutes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: AI Vision Inspector & Rationale -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <span>🧠</span>
+            <span>Vision AI Strategy Diagnostics</span>
+          </div>
+          <span class="font-mono" style="font-size: 0.75rem; color: var(--text-muted);" id="aiModelBadge">
+            gpt-4o / Heuristic CV
+          </span>
+        </div>
+
+        <div class="card-body ai-decision-card">
+          <!-- Decision Banner -->
+          <div class="decision-banner">
+            <div class="decision-main">
+              <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">SIGNAL</span>
+              <span class="decision-badge badge-skip font-brand" id="aiDecisionBadge">STANDBY</span>
+              <span class="font-mono" style="font-size: 0.8rem; color: var(--text-muted);" id="aiPriceEstimate">Est. Price: --</span>
+            </div>
+            <div class="confidence-meter">
+              <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">CONFIDENCE</span>
+              <span class="confidence-val font-mono" id="aiConfidenceVal">0.0%</span>
+              <span class="font-mono" style="font-size: 0.75rem; color: var(--text-muted);" id="aiGradeVal">GRADE: --</span>
+            </div>
+          </div>
+
+          <!-- Cropped Frame Ingestion Snapshot -->
+          <div class="cropped-preview-box">
+            <img id="croppedPreviewImg" src="" alt="Cropped Chart Canvas" style="display: none;">
+            <div id="croppedPlaceholder" style="color: var(--text-dim); font-size: 0.85rem;">
+              Auto-Cropped Candlestick Canvas Preview
+            </div>
+            <span class="preview-overlay-tag font-mono">CROPPED FEED</span>
+          </div>
+
+          <!-- AI Price Action Traits Grid -->
+          <div class="ai-traits">
+            <div class="trait-item">
+              <span class="trait-label">Trend Bias:</span>
+              <span class="trait-val" id="traitTrend">--</span>
+            </div>
+            <div class="trait-item">
+              <span class="trait-label">Rejection Wick:</span>
+              <span class="trait-val" id="traitWick">--</span>
+            </div>
+            <div class="trait-item">
+              <span class="trait-label">Key Level:</span>
+              <span class="trait-val" id="traitLevel">--</span>
+            </div>
+            <div class="trait-item">
+              <span class="trait-label">Strictness Filter:</span>
+              <span class="trait-val" id="traitFilter">PASSED</span>
+            </div>
+            <div class="trait-item">
+              <span class="trait-label">AI Learned Setup:</span>
+              <span class="trait-val font-mono" id="traitPattern" style="color: var(--neon-cyan); font-size: 0.75rem;">--</span>
+            </div>
+          </div>
+
+          <!-- AI Reasoning Text -->
+          <div class="ai-rationale-box" id="aiRationaleText">
+            The autonomous agent will evaluate the cropped candlestick canvas, verify wick rejection at key levels, and apply dynamic strictness filters before placing virtual paper trades.
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Trade Ledger History Section -->
+    <section class="ledger-section">
+      <div class="card-header">
+        <div class="card-title">
+          <span>📜</span>
+          <span>Paper Trading Ledger & Verification History</span>
+        </div>
+        <div class="font-mono" style="font-size: 0.8rem; color: var(--text-muted);" id="ledgerCount">
+          0 Executed Trades
+        </div>
+      </div>
+
+      <div class="ledger-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Direction</th>
+              <th>Entry Price</th>
+              <th>Close Price</th>
+              <th>Outcome</th>
+              <th>PnL</th>
+              <th>Confidence</th>
+              <th>Strictness</th>
+              <th>Reasoning</th>
+            </tr>
+          </thead>
+          <tbody id="tradeHistoryBody">
+            <tr>
+              <td colspan="9" style="text-align: center; color: var(--text-dim); padding: 30px;">
+                No paper trades executed yet. Share Quotex chart and start the autonomous agent.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- AI Adaptive Machine Learning Memory Section (Loss Prevention Engine) -->
+    <section class="card" style="margin-top: 24px;">
+      <div class="card-header">
+        <div class="card-title">
+          <span>🧠</span>
+          <span>Self-Adaptive AI Pattern Memory (Automatic Loss Prevention)</span>
+        </div>
+        <div class="font-mono" style="font-size: 0.8rem; color: var(--neon-cyan);" id="learnedPatternCount">
+          4 Patterns Stored
+        </div>
+      </div>
+      <div class="card-body">
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5;">
+          The AI engine analyzes every completed trade and automatically registers lessons in persistent memory. High-failure setups (win rate &lt; 45% or 2+ consecutive losses) are instantly <strong>BLOCKED</strong> to prevent repeating losses. Winning setups are reinforced and <strong>BOOSTED</strong>.
+        </div>
+        <div class="ledger-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Setup Pattern</th>
+                <th>AI Status</th>
+                <th>Win Rate</th>
+                <th>Record (W / L / D)</th>
+                <th>AI Lesson & Protection Reason</th>
+              </tr>
+            </thead>
+            <tbody id="learningMemoryBody">
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-dim); padding: 20px;">
+                  Loading learned pattern memory...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Settings & Config Modal -->
+  <div class="modal-overlay" id="configModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="font-brand" style="font-size: 1rem;">AGENT SETTINGS & API</h3>
+        <button class="btn btn-icon" id="closeModalBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="cfgApiKey">Vision AI API Key (OpenAI / xAI / OpenRouter):</label>
+          <input type="text" id="cfgApiKey" placeholder="sk-proj-... (Leave empty for built-in Heuristic CV)">
+        </div>
+        <div class="form-group">
+          <label for="cfgBaseUrl">API Base URL:</label>
+          <input type="text" id="cfgBaseUrl" value="https://api.openai.com/v1">
+        </div>
+        <div class="form-group">
+          <label for="cfgModel">Vision Model Name:</label>
+          <input type="text" id="cfgModel" value="gpt-4o">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label for="cfgAmount">Virtual Trade Amount ($):</label>
+            <input type="number" id="cfgAmount" value="100.0" step="10">
+          </div>
+          <div class="form-group">
+            <label for="cfgPayout">Quotex Payout Rate (e.g. 0.85 = 85%):</label>
+            <input type="number" id="cfgPayout" value="0.85" step="0.01" min="0.1" max="1.0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="cfgStrictness">Manual Strictness Override (1-5):</label>
+          <select id="cfgStrictness">
+            <option value="1">Level 1 - Lenient (65% min conf)</option>
+            <option value="2">Level 2 - Balanced (72% min conf)</option>
+            <option value="3" selected>Level 3 - Selective / High Probability (78% min conf - Recommended)</option>
+            <option value="4">Level 4 - Defense / Institutional (82% min conf)</option>
+            <option value="5">Level 5 - Sniper Mode (86% min conf)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelConfigBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveConfigBtn">Save Configuration</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Direct Quotex Auto-Clicker Calibration Modal -->
+  <div class="modal-overlay" id="autoClickModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="font-brand" style="font-size: 1rem; color: var(--neon-cyan);">🎯 DIRECT QUOTEX AUTO-CLICKER</h3>
+        <button class="btn btn-icon" id="closeAutoClickModalBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.2); padding: 12px; border-radius: 6px; font-size: 0.82rem; line-height: 1.45;">
+          ⚡ <strong>সরাসরি Quotex Demo-তে অটো-ট্রেড:</strong><br>
+          AI যখনই <strong style="color: var(--neon-green);">CALL</strong> বা <strong style="color: var(--neon-red);">PUT</strong> সিগন্যাল ডিটেক্ট করবে, ব্যাকএন্ড স্বয়ংক্রিয়ভাবে আপনার কোটেক্সের সবুজ বা লাল বোতামে লাইভ মাউস ক্লিক এক্সিকিউট করবে!
+        </div>
+
+        <!-- Master Switch -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(20, 26, 40, 0.85); border-radius: 6px; border: 1px solid var(--border-color);">
+          <div>
+            <strong style="font-size: 0.9rem;">Enable Direct Auto-Clicking</strong>
+            <p style="font-size: 0.75rem; color: var(--text-muted);">Quotex Demo অ্যাকাউন্টে অটো-ক্লিক চালু করুন</p>
+          </div>
+          <input type="checkbox" id="acEnabledToggle" style="transform: scale(1.6); cursor: pointer; accent-color: var(--neon-cyan);">
+        </div>
+
+        <!-- One-Click Auto-Detect AI Button -->
+        <button class="btn btn-primary font-mono" id="autoDetectButtonsBtn" style="width: 100%; padding: 12px; font-size: 0.88rem; background: linear-gradient(135deg, #00f0ff, #0077ff); color: #000; font-weight: 700; border: none; border-radius: 6px; box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); cursor: pointer;">
+          🤖 Auto-Detect Buttons with AI (১-ক্লিক অটো স্ক্যান)
+        </button>
+
+        <!-- Live Coordinate Tracker -->
+        <div style="background: rgba(0, 240, 255, 0.05); border: 1px dashed var(--neon-cyan); padding: 10px 14px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">📡 লাইভ কার্সর মনিটর (Real-time):</span>
+            <div class="font-mono" id="liveMousePosText" style="font-size: 0.95rem; color: var(--neon-cyan); font-weight: 700;">
+              মাউস নড়াচড়া করুন...
+            </div>
+          </div>
+          <button class="btn btn-secondary font-mono" id="toggleLiveTrackerBtn" style="padding: 4px 10px; font-size: 0.75rem; border-color: var(--neon-cyan); color: var(--neon-cyan);">
+            🔴 Live Track OFF
+          </button>
+        </div>
+
+        <!-- Calibration Green UP Button -->
+        <div style="background: rgba(0, 255, 136, 0.05); border: 1px solid rgba(0, 255, 136, 0.3); padding: 14px; border-radius: 6px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="color: var(--neon-green); font-size: 0.85rem;">🟢 UP / CALL Button Position (সবুজ বাটন - উপরে)</strong>
+            <button class="btn btn-secondary font-mono" id="grabCallPosBtn" style="padding: 4px 10px; font-size: 0.75rem;">
+              🎯 Grab Cursor (5s)
+            </button>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <label style="font-size: 0.75rem; color: var(--text-muted);">X:</label>
+            <input type="number" id="acCallX" value="4482" class="font-mono" style="width: 85px;">
+            <label style="font-size: 0.75rem; color: var(--text-muted);">Y:</label>
+            <input type="number" id="acCallY" value="486" class="font-mono" style="width: 85px;">
+            <button class="btn btn-secondary font-mono" id="testCallClickBtn" style="padding: 4px 12px; font-size: 0.75rem; border-color: var(--neon-green); color: var(--neon-green);">
+              🖱️ Test Click
+            </button>
+          </div>
+        </div>
+
+        <!-- Calibration Red DOWN Button -->
+        <div style="background: rgba(255, 51, 102, 0.05); border: 1px solid rgba(255, 51, 102, 0.3); padding: 14px; border-radius: 6px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="color: var(--neon-red); font-size: 0.85rem;">🔴 DOWN / PUT Button Position (লাল বাটন - নিচে)</strong>
+            <button class="btn btn-secondary font-mono" id="grabPutPosBtn" style="padding: 4px 10px; font-size: 0.75rem;">
+              🎯 Grab Cursor (5s)
+            </button>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <label style="font-size: 0.75rem; color: var(--text-muted);">X:</label>
+            <input type="number" id="acPutX" value="4442" class="font-mono" style="width: 85px;">
+            <label style="font-size: 0.75rem; color: var(--text-muted);">Y:</label>
+            <input type="number" id="acPutY" value="531" class="font-mono" style="width: 85px;">
+            <button class="btn btn-secondary font-mono" id="testPutClickBtn" style="padding: 4px 12px; font-size: 0.75rem; border-color: var(--neon-red); color: var(--neon-red);">
+              🖱️ Test Click
+            </button>
+          </div>
+        </div>
+
+        <div style="font-size: 0.76rem; color: var(--text-muted); line-height: 1.4;">
+          👉 <strong>সহজ টিপস:</strong> "Grab Cursor (5s)" বাটনে চাপ দিয়ে ৫ সেকেন্ডের মধ্যে মাউসটি কোটেক্সের সবুজ বা লাল বাটনের ওপর স্থির রাখুন। কোঅর্ডিনেট অটোমেটিক সেভ হয়ে যাবে!
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelAutoClickBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveAutoClickBtn">Save & Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Synthesizer (Web Audio API) & Frontend Logic -->
+  <script>
+    // =========================================================================
+    // AUDIO SYNTHESIZER (ZERO-DEPENDENCY CHIMES)
+    // =========================================================================
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playTone(freq, duration, type = 'sine', gainVal = 0.15) {
+        if (!this.enabled) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+
+        gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+      }
+
+      playWin() {
+        if (!this.enabled) return;
+        this.init();
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          setTimeout(() => this.playTone(freq, 0.28, 'triangle', 0.2), idx * 110);
+        });
+      }
+
+      playLoss() {
+        if (!this.enabled) return;
+        this.init();
+        const notes = [349.23, 261.63, 174.61]; // F4, C4, F3
+        notes.forEach((freq, idx) => {
+          setTimeout(() => this.playTone(freq, 0.35, 'sawtooth', 0.15), idx * 140);
+        });
+      }
+
+      playTradePlaced() {
+        if (!this.enabled) return;
+        this.init();
+        this.playTone(880, 0.1, 'sine', 0.2);
+        setTimeout(() => this.playTone(1320, 0.18, 'sine', 0.25), 110);
+      }
+
+      playTargetAchieved() {
+        if (!this.enabled) return;
+        this.init();
+        const fanfare = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98];
+        fanfare.forEach((freq, idx) => {
+          setTimeout(() => this.playTone(freq, 0.35, 'triangle', 0.25), idx * 120);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // =========================================================================
+    // STATE & DOM ELEMENTS
+    // =========================================================================
+    let screenStream = null;
+    let autoTradingActive = false;
+    let cycleIntervalTimer = null;
+    let candleTimeframe = 60; // seconds
+    let candleSecondsLeft = 60;
+    let activePendingTrade = null;
+
+    // DOM Elements
+    const shareScreenBtn = document.getElementById('shareScreenBtn');
+    const streamVideo = document.getElementById('streamVideo');
+    const streamCanvas = document.getElementById('streamCanvas');
+    const streamPlaceholder = document.getElementById('streamPlaceholder');
+    const toggleAutoBtn = document.getElementById('toggleAutoBtn');
+    const triggerScanBtn = document.getElementById('triggerScanBtn');
+    const timeframeSelect = document.getElementById('timeframeSelect');
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
+    const soundIcon = document.getElementById('soundIcon');
+    const cycleProgressBar = document.getElementById('cycleProgressBar');
+    const cycleSecondsRemaining = document.getElementById('cycleSecondsRemaining');
+
+    // Status Banner Elements
+    const statusBanner = document.getElementById('statusBanner');
+    const statusPill = document.getElementById('statusPill');
+    const statusIcon = document.getElementById('statusIcon');
+    const statusBadgeText = document.getElementById('statusBadgeText');
+    const statusDescription = document.getElementById('statusDescription');
+    const rollingBadges = document.getElementById('rollingBadges');
+    const rollingRateBadge = document.getElementById('rollingRateBadge');
+
+    // Stats
+    const statBalance = document.getElementById('statBalance');
+    const statPnl = document.getElementById('statPnl');
+    const statTotalTrades = document.getElementById('statTotalTrades');
+    const statRecord = document.getElementById('statRecord');
+    const statWinRate = document.getElementById('statWinRate');
+    const statStrictness = document.getElementById('statStrictness');
+    const statStrictnessDesc = document.getElementById('statStrictnessDesc');
+
+    // Active Trade Box
+    const activeTradeBox = document.getElementById('activeTradeBox');
+    const atDirection = document.getElementById('atDirection');
+    const atEntryPrice = document.getElementById('atEntryPrice');
+    const atCountdown = document.getElementById('atCountdown');
+    const forceVerifyBtn = document.getElementById('forceVerifyBtn');
+
+    // AI Diagnostics
+    const aiDecisionBadge = document.getElementById('aiDecisionBadge');
+    const aiPriceEstimate = document.getElementById('aiPriceEstimate');
+    const aiConfidenceVal = document.getElementById('aiConfidenceVal');
+    const aiGradeVal = document.getElementById('aiGradeVal');
+    const croppedPreviewImg = document.getElementById('croppedPreviewImg');
+    const croppedPlaceholder = document.getElementById('croppedPlaceholder');
+    const traitTrend = document.getElementById('traitTrend');
+    const traitWick = document.getElementById('traitWick');
+    const traitLevel = document.getElementById('traitLevel');
+    const traitFilter = document.getElementById('traitFilter');
+    const aiRationaleText = document.getElementById('aiRationaleText');
+    const aiModelBadge = document.getElementById('aiModelBadge');
+
+    // Table
+    const tradeHistoryBody = document.getElementById('tradeHistoryBody');
+    const ledgerCount = document.getElementById('ledgerCount');
+
+    // Config Modal
+    const configBtn = document.getElementById('configBtn');
+    const configModal = document.getElementById('configModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelConfigBtn = document.getElementById('cancelConfigBtn');
+    const saveConfigBtn = document.getElementById('saveConfigBtn');
+    const resetSessionBtn = document.getElementById('resetSessionBtn');
+
+    // =========================================================================
+    // SCREEN CAPTURE API
+    // =========================================================================
+    shareScreenBtn.addEventListener('click', async () => {
+      try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            cursor: "never",
+            displaySurface: "browser"
+          },
+          audio: false
+        });
+
+        streamVideo.srcObject = screenStream;
+        streamVideo.style.display = 'block';
+        streamPlaceholder.style.display = 'none';
+
+        shareScreenBtn.innerHTML = '🟢 Quotex Tab Connected';
+        shareScreenBtn.classList.remove('btn-primary');
+        shareScreenBtn.classList.add('btn-secondary');
+
+        screenStream.getVideoTracks()[0].onended = () => {
+          streamVideo.style.display = 'none';
+          streamPlaceholder.style.display = 'flex';
+          shareScreenBtn.innerHTML = '📡 Share Quotex Tab';
+          shareScreenBtn.classList.remove('btn-secondary');
+          shareScreenBtn.classList.add('btn-primary');
+          screenStream = null;
+        };
+
+        // Resume AudioContext on user interaction
+        sound.init();
+
+      } catch (err) {
+        console.error("Screen capture cancelled or failed:", err);
+        alert("Screen capture was cancelled or failed. Please select your Quotex window/tab.");
+      }
+    });
+
+    function captureCurrentFrameBase64() {
+      if (!screenStream || !streamVideo.videoWidth) {
+        return null;
+      }
+      streamCanvas.width = streamVideo.videoWidth;
+      streamCanvas.height = streamVideo.videoHeight;
+      const ctx = streamCanvas.getContext('2d');
+      ctx.drawImage(streamVideo, 0, 0, streamCanvas.width, streamCanvas.height);
+      return streamCanvas.toDataURL('image/jpeg', 0.88);
+    }
+
+    // =========================================================================
+    // SERVER API CLIENT & REFRESH LOGIC
+    // =========================================================================
+    async function fetchSessionStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        updateUIWithSessionStats(data);
+      } catch (e) {
+        console.warn("Failed to fetch session status:", e);
+      }
+    }
+
+    async function fetchTradeHistory() {
+      try {
+        const res = await fetch('/api/trades');
+        const trades = await res.json();
+        renderTradeHistory(trades);
+      } catch (e) {
+        console.warn("Failed to fetch trades:", e);
+      }
+    }
+
+    function updateUIWithSessionStats(stats) {
+      // Balance & PnL
+      statBalance.textContent = `$${stats.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      const pnl = stats.balance - stats.initial_balance;
+      statPnl.textContent = `PnL: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`;
+      statPnl.className = `stat-sub font-mono ${pnl >= 0 ? 'badge-win' : 'badge-loss'}`;
+
+      // Total Trades & Record
+      statTotalTrades.textContent = stats.total_trades;
+      statRecord.textContent = `Wins: ${stats.wins} | Losses: ${stats.losses} | Draws: ${stats.draws}`;
+      statWinRate.textContent = `${stats.overall_win_rate.toFixed(1)}%`;
+
+      // Strictness
+      statStrictness.textContent = `Level ${stats.current_strictness}`;
+      statStrictnessDesc.textContent = stats.strictness_name.split(' - ')[1] || 'Standard';
+
+      // Rolling 5 Badges
+      const rolls = stats.rolling_window || [];
+      rollingBadges.innerHTML = '';
+      for (let i = 0; i < 5; i++) {
+        const pill = document.createElement('div');
+        pill.className = 'roll-pill font-mono';
+        if (i < rolls.length) {
+          const outcome = rolls[i];
+          if (outcome === 'WIN') {
+            pill.textContent = 'W';
+            pill.classList.add('win');
+          } else if (outcome === 'LOSS') {
+            pill.textContent = 'L';
+            pill.classList.add('loss');
+          } else {
+            pill.textContent = 'D';
+            pill.classList.add('draw');
+          }
+        } else {
+          pill.textContent = '-';
+        }
+        rollingBadges.appendChild(pill);
+      }
+      rollingRateBadge.textContent = `${stats.rolling_win_rate.toFixed(1)}%`;
+
+      // Target Achieved Status Banner
+      if (stats.target_achieved) {
+        statusBanner.classList.add('achieved');
+        statusPill.classList.add('achieved');
+        statusIcon.textContent = '🏆';
+        statusBadgeText.textContent = 'TARGET ACHIEVED: 80% WIN RATE';
+        statusDescription.innerHTML = `<strong>CONVERGENCE REACHED!</strong> Agent completed ${rolls.filter(x => x === 'WIN').length}/${rolls.length} wins in rolling window. Strategy locked.`;
+      } else {
+        statusBanner.classList.remove('achieved');
+        statusPill.classList.remove('achieved');
+        statusIcon.textContent = '⚡';
+        statusBadgeText.textContent = stats.status_badge;
+        statusDescription.innerHTML = stats.status_message;
+      }
+
+      if (stats.learning_summary) {
+        renderLearningMemory(stats.learning_summary);
+      }
+
+      // Active Pending Trade Widget
+      if (stats.active_trade) {
+        activePendingTrade = stats.active_trade;
+        activeTradeBox.classList.add('active');
+        atDirection.textContent = activePendingTrade.direction;
+        atDirection.className = `dir-tag font-mono ${activePendingTrade.direction}`;
+        atEntryPrice.textContent = activePendingTrade.entry_price.toFixed(5);
+      } else {
+        activePendingTrade = null;
+        activeTradeBox.classList.remove('active');
+      }
+    }
+
+    async function fetchLearningMemory() {
+      try {
+        const res = await fetch('/api/learning');
+        const data = await res.json();
+        renderLearningMemory(data);
+      } catch (e) {
+        console.warn("Failed to fetch learning memory:", e);
+      }
+    }
+
+    function renderLearningMemory(data) {
+      if (!data || !data.patterns) return;
+      const patterns = data.patterns;
+      const keys = Object.keys(patterns);
+      
+      const countEl = document.getElementById('learnedPatternCount');
+      if (countEl) countEl.textContent = `${keys.length} Patterns Stored`;
+
+      const bodyEl = document.getElementById('learningMemoryBody');
+      if (!bodyEl) return;
+
+      if (keys.length === 0) {
+        bodyEl.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 20px;">No learned patterns yet.</td></tr>`;
+        return;
+      }
+
+      bodyEl.innerHTML = '';
+      keys.forEach(k => {
+        const p = patterns[k];
+        const tr = document.createElement('tr');
+        
+        let statusBadge = '<span class="pill-win">ACTIVE</span>';
+        if (p.status === 'BLOCKED') {
+          statusBadge = '<span class="pill-loss" style="background: rgba(255, 51, 102, 0.2); color: #ff3366; font-weight: bold; padding: 4px 8px; border-radius: 4px;">🚫 BLOCKED (PROTECTED)</span>';
+        } else if (p.status === 'BOOSTED') {
+          statusBadge = '<span class="pill-win" style="background: rgba(0, 255, 136, 0.2); color: #00ff88; font-weight: bold; padding: 4px 8px; border-radius: 4px;">⭐ BOOSTED (+4% CONF)</span>';
+        }
+
+        const wrColor = p.win_rate >= 75 ? 'var(--neon-green)' : (p.win_rate < 50 ? 'var(--neon-red)' : 'var(--neon-gold)');
+
+        tr.innerHTML = `
+          <td class="font-mono" style="font-weight: 600; color: var(--text-main); font-size: 0.8rem;">${escapeHtml(p.name)}</td>
+          <td>${statusBadge}</td>
+          <td class="font-mono" style="font-weight: bold; color: ${wrColor};">${p.win_rate.toFixed(1)}%</td>
+          <td class="font-mono" style="font-size: 0.8rem;">${p.wins}W - ${p.losses}L - ${p.draws}D</td>
+          <td style="font-size: 0.78rem; color: var(--text-muted); max-width: 380px;">${escapeHtml(p.last_feedback || 'Pattern actively learning from live execution.')}</td>
+        `;
+        bodyEl.appendChild(tr);
+      });
+    }
+
+    function renderTradeHistory(trades) {
+      ledgerCount.textContent = `${trades.length} Executed Trades`;
+      if (!trades.length) {
+        tradeHistoryBody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align: center; color: var(--text-dim); padding: 30px;">
+              No paper trades executed yet. Share Quotex chart and start the autonomous agent.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tradeHistoryBody.innerHTML = trades.map(t => {
+        const outcomePill = t.outcome === 'WIN' 
+          ? `<span class="pill-win">WIN</span>`
+          : (t.outcome === 'LOSS' ? `<span class="pill-loss">LOSS</span>` : `<span class="pill-draw">${t.outcome}</span>`);
+
+        const pnlFormatted = t.pnl >= 0 ? `+$${t.pnl.toFixed(2)}` : `-$${Math.abs(t.pnl).toFixed(2)}`;
+        const pnlColor = t.pnl > 0 ? 'var(--neon-green)' : (t.pnl < 0 ? 'var(--neon-red)' : 'var(--text-muted)');
+        const patternTag = t.pattern_name ? `<div style="font-size: 0.72rem; color: var(--neon-cyan); font-weight: 600; margin-bottom: 2px;">[${escapeHtml(t.pattern_name)}]</div>` : '';
+
+        return `
+          <tr>
+            <td class="font-mono">${t.timestamp}</td>
+            <td><strong class="${t.direction === 'CALL' ? 'badge-win' : 'badge-loss'}">${t.direction}</strong></td>
+            <td class="font-mono">${t.entry_price ? t.entry_price.toFixed(5) : '--'}</td>
+            <td class="font-mono">${t.close_price ? t.close_price.toFixed(5) : '--'}</td>
+            <td>${outcomePill}</td>
+            <td class="font-mono" style="color: ${pnlColor}; font-weight: 700;">${pnlFormatted}</td>
+            <td class="font-mono">${t.confidence.toFixed(1)}%</td>
+            <td class="font-mono">L${t.strictness_level}</td>
+            <td style="max-width: 320px; font-size: 0.78rem; color: var(--text-muted);">${patternTag}<div>${escapeHtml(t.rationale)}</div></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+
+    // =========================================================================
+    // EXECUTION CYCLE & VERIFICATION
+    // =========================================================================
+    let isCycleBusy = false;
+    let lastScanBucket = -1;
+
+    async function executeCycle(forceVerification = false) {
+      if (isCycleBusy && !forceVerification) return;
+      isCycleBusy = true;
+
+      let b64 = captureCurrentFrameBase64();
+      if (!b64) {
+        // If screen not shared yet, provide simulated mock frame for demonstration
+        b64 = generateMockChartCanvasBase64();
+      }
+
+      try {
+        const payload = {
+          image_base64: b64,
+          timeframe_seconds: candleTimeframe,
+          force_verify: forceVerification
+        };
+
+        const response = await fetch('/api/auto-cycle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        handleCycleResult(data);
+
+      } catch (err) {
+        console.error("Cycle execution error:", err);
+      } finally {
+        isCycleBusy = false;
+      }
+    }
+
+    function handleCycleResult(data) {
+      if (data.session) {
+        updateUIWithSessionStats(data.session);
+      }
+
+      // Check if cropped frame preview returned
+      if (data.cropped_preview_b64) {
+        croppedPreviewImg.src = data.cropped_preview_b64;
+        croppedPreviewImg.style.display = 'block';
+        croppedPlaceholder.style.display = 'none';
+      }
+
+      // Decision details
+      if (data.decision) {
+        const dec = data.decision;
+        aiDecisionBadge.textContent = dec.direction;
+        aiDecisionBadge.className = `decision-badge font-brand ${dec.direction === 'CALL' ? 'badge-call' : (dec.direction === 'PUT' ? 'badge-put' : 'badge-skip')}`;
+        aiPriceEstimate.textContent = `Est. Price: ${dec.current_price.toFixed(5)}`;
+        aiConfidenceVal.textContent = `${dec.confidence.toFixed(1)}%`;
+        aiGradeVal.textContent = `GRADE: ${dec.setup_grade || 'B'}`;
+
+        traitTrend.textContent = dec.trend;
+        traitWick.textContent = dec.rejection_wick_found ? 'YES (Confirmed)' : 'NO (Weak)';
+        traitLevel.textContent = dec.support_resistance_level || 'Dynamic Zone';
+        traitFilter.textContent = dec.direction === 'SKIP' ? 'FILTERED' : 'PASSED';
+        traitFilter.style.color = dec.direction === 'SKIP' ? 'var(--neon-gold)' : 'var(--neon-green)';
+
+        const tp = document.getElementById('traitPattern');
+        if (tp) tp.textContent = dec.pattern_name || '--';
+
+        aiRationaleText.textContent = dec.reasoning;
+      }
+
+      // Outcome Verification Audio & History
+      const resolved = data.resolved_trade || (data.cycle_action === 'TRADE_VERIFIED' ? data.trade : null);
+      if (resolved) {
+        fetchTradeHistory();
+        const outcome = resolved.outcome;
+        if (outcome === 'WIN') {
+          sound.playWin();
+          if (data.session && data.session.target_achieved) {
+            setTimeout(() => sound.playTargetAchieved(), 700);
+          }
+        } else if (outcome === 'LOSS') {
+          sound.playLoss();
+        }
+      }
+
+      // New Trade Placed Audio
+      if (data.cycle_action && data.cycle_action.includes('TRADE_OPENED')) {
+        sound.playTradePlaced();
+      }
+    }
+
+    // Heuristic synthetic frame generator (for offline / testing without screen share)
+    function generateMockChartCanvasBase64() {
+      const off = document.createElement('canvas');
+      off.width = 640;
+      off.height = 360;
+      const ctx = off.getContext('2d');
+      // Dark background
+      ctx.fillStyle = '#0a0d14';
+      ctx.fillRect(0, 0, off.width, off.height);
+      // Grid lines
+      ctx.strokeStyle = '#1b2333';
+      ctx.lineWidth = 1;
+      for (let y = 30; y < off.height; y += 40) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(off.width, y); ctx.stroke();
+      }
+      // Candlesticks
+      let price = 180;
+      for (let i = 20; i < off.width - 60; i += 18) {
+        const isGreen = Math.random() > 0.45;
+        const bodyHeight = 8 + Math.random() * 26;
+        const wickHeight = bodyHeight + 6 + Math.random() * 16;
+        price += (isGreen ? -1 : 1) * (Math.random() * 8);
+
+        ctx.strokeStyle = isGreen ? '#00e793' : '#ff3b56';
+        ctx.fillStyle = isGreen ? '#00e793' : '#ff3b56';
+
+        // Wick
+        ctx.beginPath();
+        ctx.moveTo(i + 4, price - wickHeight / 2);
+        ctx.lineTo(i + 4, price + wickHeight / 2);
+        ctx.stroke();
+
+        // Body
+        ctx.fillRect(i, price - bodyHeight / 2, 8, bodyHeight);
+      }
+      return off.toDataURL('image/jpeg', 0.85);
+    }
+
+    // =========================================================================
+    // REAL-CLOCK CANDLE COUNTDOWN & SENIOR TRADER EXECUTION SYNC
+    // =========================================================================
+    function updateCandleClock() {
+      const now = new Date();
+      const currentSeconds = now.getSeconds();
+
+      // Quotex candles are strictly bound to system clock (00 to 59 seconds)
+      const secondsIntoCandle = currentSeconds % candleTimeframe;
+      let secondsLeft = candleTimeframe - secondsIntoCandle;
+      if (secondsLeft === 0) secondsLeft = candleTimeframe;
+      candleSecondsLeft = secondsLeft;
+
+      // Update progress bar
+      const pct = (secondsLeft / candleTimeframe) * 100;
+      if (cycleProgressBar) cycleProgressBar.style.width = `${pct}%`;
+      if (cycleSecondsRemaining) cycleSecondsRemaining.textContent = `${secondsLeft}s`;
+
+      // Update active trade countdown
+      if (activePendingTrade && atCountdown) {
+        atCountdown.textContent = `${Math.max(0, secondsLeft)}s`;
+      }
+
+      // Senior Trader Precision Timing:
+      // At second 58 (secondsLeft === 2), the current 1-minute candle is 97% formed.
+      // We trigger analysis and click execution so the trade enters right at the candle boundary (second 59/00)!
+      const currentBucket = Math.floor(now.getTime() / (candleTimeframe * 1000));
+      if (autoTradingActive && secondsLeft === 2 && lastScanBucket !== currentBucket && !isCycleBusy) {
+        lastScanBucket = currentBucket;
+        executeCycle();
+      }
+    }
+
+    function startAutonomousLoop() {
+      autoTradingActive = true;
+      toggleAutoBtn.innerHTML = '⏹ Stop Autonomous Agent';
+      toggleAutoBtn.classList.remove('btn-success');
+      toggleAutoBtn.classList.add('btn-danger');
+
+      candleTimeframe = parseInt(timeframeSelect.value, 10);
+      updateCandleClock();
+
+      clearInterval(cycleIntervalTimer);
+      // Run every 400ms to guarantee hitting second 58 without timing drift
+      cycleIntervalTimer = setInterval(updateCandleClock, 400);
+    }
+
+    function stopAutonomousLoop() {
+      autoTradingActive = false;
+      toggleAutoBtn.innerHTML = '▶ Start Autonomous Agent';
+      toggleAutoBtn.classList.remove('btn-danger');
+      toggleAutoBtn.classList.add('btn-success');
+      clearInterval(cycleIntervalTimer);
+    }
+
+    toggleAutoBtn.addEventListener('click', () => {
+      sound.init();
+      if (!autoTradingActive) {
+        startAutonomousLoop();
+      } else {
+        stopAutonomousLoop();
+      }
+    });
+
+    triggerScanBtn.addEventListener('click', () => {
+      sound.init();
+      executeCycle();
+    });
+
+    forceVerifyBtn.addEventListener('click', () => {
+      sound.init();
+      executeCycle(true);
+    });
+
+    timeframeSelect.addEventListener('change', () => {
+      candleTimeframe = parseInt(timeframeSelect.value, 10);
+      candleSecondsLeft = candleTimeframe;
+      cycleSecondsRemaining.textContent = `${candleSecondsLeft}s`;
+      cycleProgressBar.style.width = '100%';
+    });
+
+    soundToggleBtn.addEventListener('click', () => {
+      sound.enabled = !sound.enabled;
+      soundIcon.textContent = sound.enabled ? '🔊' : '🔇';
+    });
+
+    // =========================================================================
+    // MODAL & CONFIGURATION HANDLERS
+    // =========================================================================
+    configBtn.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/config');
+        const cfg = await res.json();
+        document.getElementById('cfgBaseUrl').value = cfg.base_url;
+        document.getElementById('cfgModel').value = cfg.model_name;
+        document.getElementById('cfgAmount').value = cfg.trade_amount;
+        document.getElementById('cfgPayout').value = cfg.payout_rate;
+        document.getElementById('cfgStrictness').value = cfg.current_strictness;
+        configModal.classList.add('open');
+      } catch (e) {
+        console.error("Error loading config:", e);
+      }
+    });
+
+    function closeConfig() {
+      configModal.classList.remove('open');
+    }
+
+    closeModalBtn.addEventListener('click', closeConfig);
+    cancelConfigBtn.addEventListener('click', closeConfig);
+
+    saveConfigBtn.addEventListener('click', async () => {
+      const keyVal = document.getElementById('cfgApiKey').value.trim();
+      const payload = {
+        base_url: document.getElementById('cfgBaseUrl').value.trim(),
+        model_name: document.getElementById('cfgModel').value.trim(),
+        trade_amount: parseFloat(document.getElementById('cfgAmount').value),
+        payout_rate: parseFloat(document.getElementById('cfgPayout').value),
+        strictness_level: parseInt(document.getElementById('cfgStrictness').value, 10)
+      };
+
+      if (keyVal) {
+        payload.api_key = keyVal;
+      }
+
+      try {
+        await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        closeConfig();
+        fetchSessionStatus();
+        alert("Configuration updated successfully!");
+      } catch (err) {
+        alert("Failed to save configuration.");
+      }
+    });
+
+    resetSessionBtn.addEventListener('click', async () => {
+      if (confirm("Reset current paper trading session and clear trade history?")) {
+        try {
+          await fetch('/api/reset', { method: 'POST' });
+          fetchSessionStatus();
+          fetchTradeHistory();
+        } catch (e) {
+          alert("Failed to reset session.");
+        }
+      }
+    });
+
+    // =========================================================================
+    // DIRECT QUOTEX AUTO-CLICKER CONTROLLER
+    // =========================================================================
+    const autoClickModalBtn = document.getElementById('autoClickModalBtn');
+    const autoClickModal = document.getElementById('autoClickModal');
+    const closeAutoClickModalBtn = document.getElementById('closeAutoClickModalBtn');
+    const cancelAutoClickBtn = document.getElementById('cancelAutoClickBtn');
+    const saveAutoClickBtn = document.getElementById('saveAutoClickBtn');
+    const autoClickStatusBadge = document.getElementById('autoClickStatusBadge');
+
+    const acEnabledToggle = document.getElementById('acEnabledToggle');
+    const acCallX = document.getElementById('acCallX');
+    const acCallY = document.getElementById('acCallY');
+    const acPutX = document.getElementById('acPutX');
+    const acPutY = document.getElementById('acPutY');
+    const grabCallPosBtn = document.getElementById('grabCallPosBtn');
+    const grabPutPosBtn = document.getElementById('grabPutPosBtn');
+    const testCallClickBtn = document.getElementById('testCallClickBtn');
+    const testPutClickBtn = document.getElementById('testPutClickBtn');
+
+    async function fetchAutoClickConfig() {
+      try {
+        const res = await fetch('/api/autoclick/config');
+        const data = await res.json();
+        acEnabledToggle.checked = data.enabled;
+        acCallX.value = data.call_x;
+        acCallY.value = data.call_y;
+        acPutX.value = data.put_x;
+        acPutY.value = data.put_y;
+
+        if (data.enabled) {
+          autoClickStatusBadge.innerHTML = '⚡ AUTO-CLICK: ACTIVE';
+          autoClickStatusBadge.style.background = 'rgba(0, 255, 136, 0.2)';
+          autoClickStatusBadge.style.color = 'var(--neon-green)';
+          autoClickStatusBadge.style.borderColor = 'var(--neon-green)';
+        } else {
+          autoClickStatusBadge.innerHTML = '🖱️ AUTO-CLICK: OFF';
+          autoClickStatusBadge.style.background = 'rgba(255, 51, 102, 0.15)';
+          autoClickStatusBadge.style.color = 'var(--neon-red)';
+          autoClickStatusBadge.style.borderColor = 'rgba(255, 51, 102, 0.3)';
+        }
+      } catch (e) {
+        console.warn("Failed to fetch autoclick config:", e);
+      }
+    }
+
+    autoClickModalBtn.addEventListener('click', () => {
+      fetchAutoClickConfig();
+      autoClickModal.classList.add('open');
+    });
+
+    function closeAutoClickModal() {
+      stopLiveTracker();
+      autoClickModal.classList.remove('open');
+    }
+
+    closeAutoClickModalBtn.addEventListener('click', closeAutoClickModal);
+    cancelAutoClickBtn.addEventListener('click', closeAutoClickModal);
+
+    let liveTrackerInterval = null;
+    let liveTrackerActive = false;
+    const liveMousePosText = document.getElementById('liveMousePosText');
+    const toggleLiveTrackerBtn = document.getElementById('toggleLiveTrackerBtn');
+
+    function startLiveTracker() {
+      liveTrackerActive = true;
+      toggleLiveTrackerBtn.textContent = '🟢 Live Track ON';
+      toggleLiveTrackerBtn.style.color = 'var(--neon-green)';
+      toggleLiveTrackerBtn.style.borderColor = 'var(--neon-green)';
+
+      clearInterval(liveTrackerInterval);
+      liveTrackerInterval = setInterval(async () => {
+        try {
+          const res = await fetch('/api/autoclick/mouse-pos');
+          const pos = await res.json();
+          if (pos && typeof pos.x === 'number') {
+            liveMousePosText.textContent = `X: ${pos.x}, Y: ${pos.y}`;
+          }
+        } catch (e) {}
+      }, 300);
+    }
+
+    function stopLiveTracker() {
+      liveTrackerActive = false;
+      toggleLiveTrackerBtn.textContent = '🔴 Live Track OFF';
+      toggleLiveTrackerBtn.style.color = 'var(--neon-cyan)';
+      toggleLiveTrackerBtn.style.borderColor = 'var(--neon-cyan)';
+      clearInterval(liveTrackerInterval);
+      liveMousePosText.textContent = 'মাউস নড়াচড়া করুন...';
+    }
+
+    toggleLiveTrackerBtn.addEventListener('click', () => {
+      if (!liveTrackerActive) {
+        startLiveTracker();
+      } else {
+        stopLiveTracker();
+      }
+    });
+
+    function triggerGrabCountdown(buttonEl, targetXInput, targetYInput) {
+      let count = 5;
+      buttonEl.disabled = true;
+      const origText = buttonEl.textContent;
+      sound.playTone(600, 0.08, 'sine', 0.15);
+      buttonEl.textContent = `বাটনে রাখুন (${count}s)...`;
+
+      const timer = setInterval(async () => {
+        count--;
+        if (count > 0) {
+          sound.playTone(600, 0.08, 'sine', 0.15);
+          buttonEl.textContent = `বাটনে রাখুন (${count}s)...`;
+        } else {
+          clearInterval(timer);
+          buttonEl.textContent = "ক্যাপচার হচ্ছে...";
+          try {
+            const res = await fetch('/api/autoclick/mouse-pos');
+            const pos = await res.json();
+            targetXInput.value = pos.x;
+            targetYInput.value = pos.y;
+            sound.playTradePlaced();
+            buttonEl.textContent = `✅ সেট: (${pos.x}, ${pos.y})!`;
+            setTimeout(() => {
+              buttonEl.textContent = origText;
+              buttonEl.disabled = false;
+            }, 2000);
+          } catch (e) {
+            buttonEl.textContent = "Failed";
+            buttonEl.disabled = false;
+          }
+        }
+      }, 1000);
+    }
+
+    const autoDetectButtonsBtn = document.getElementById('autoDetectButtonsBtn');
+
+    autoDetectButtonsBtn.addEventListener('click', async () => {
+      const origText = autoDetectButtonsBtn.textContent;
+      autoDetectButtonsBtn.disabled = true;
+      autoDetectButtonsBtn.textContent = '🔍 Quotex স্ক্রিন স্ক্যান হচ্ছে...';
+
+      try {
+        const res = await fetch('/api/autoclick/auto-detect', { method: 'POST' });
+        const data = await res.json();
+
+        if (data.success) {
+          acCallX.value = data.call_x;
+          acCallY.value = data.call_y;
+          acPutX.value = data.put_x;
+          acPutY.value = data.put_y;
+          sound.playWin();
+          autoDetectButtonsBtn.textContent = `✅ বাটন ডিটেক্টেড! (${data.call_x}, ${data.call_y}) & (${data.put_x}, ${data.put_y})`;
+          alert(`🎯 সফলভাবে কোটেক্সের বাটন স্ক্যান হয়েছে!\n\n🟢 Green Buy (CALL): X = ${data.call_x}, Y = ${data.call_y}\n🔴 Red Sell (PUT):  X = ${data.put_x}, Y = ${data.put_y}\n\nমানগুলি অটোমেটিক বসে গেছে। এখন নিচে "Save & Apply" বাটনে চাপ দিন।`);
+        } else {
+          alert("⚠️ কোটেক্স বাটন পাওয়া যায়নি। নিশ্চিত করুন যে Quotex ব্রাউজারটি ওপেন রয়েছে।");
+          autoDetectButtonsBtn.textContent = '❌ বাটন পাওয়া যায়নি';
+        }
+      } catch (err) {
+        alert("স্ক্যান ত্রুটি: " + err);
+        autoDetectButtonsBtn.textContent = '❌ এরর';
+      }
+
+      setTimeout(() => {
+        autoDetectButtonsBtn.textContent = origText;
+        autoDetectButtonsBtn.disabled = false;
+      }, 2500);
+    });
+
+    grabCallPosBtn.addEventListener('click', () => triggerGrabCountdown(grabCallPosBtn, acCallX, acCallY));
+    grabPutPosBtn.addEventListener('click', () => triggerGrabCountdown(grabPutPosBtn, acPutX, acPutY));
+
+    async function triggerTestClickWithCountdown(buttonEl, direction) {
+      const origText = buttonEl.textContent;
+      buttonEl.disabled = true;
+      let count = 3;
+      buttonEl.textContent = `Quotex-এ যান (${count}s)...`;
+
+      const cdTimer = setInterval(async () => {
+        count--;
+        if (count > 0) {
+          buttonEl.textContent = `Quotex-এ যান (${count}s)...`;
+        } else {
+          clearInterval(cdTimer);
+          buttonEl.textContent = "⚡ Clicking NOW...";
+          try {
+            const res = await fetch('/api/autoclick/test-click', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ direction: direction })
+            });
+            const d = await res.json();
+            sound.playTradePlaced();
+            buttonEl.textContent = `✅ Clicked (${d.clicked_at.x}, ${d.clicked_at.y})!`;
+          } catch (e) {
+            buttonEl.textContent = "❌ Failed";
+          }
+          setTimeout(() => {
+            buttonEl.textContent = origText;
+            buttonEl.disabled = false;
+          }, 2000);
+        }
+      }, 1000);
+    }
+
+    testCallClickBtn.addEventListener('click', () => triggerTestClickWithCountdown(testCallClickBtn, 'CALL'));
+    testPutClickBtn.addEventListener('click', () => triggerTestClickWithCountdown(testPutClickBtn, 'PUT'));
+
+    saveAutoClickBtn.addEventListener('click', async () => {
+      const callY = parseInt(acCallY.value, 10);
+      const putY = parseInt(acPutY.value, 10);
+
+      if (acEnabledToggle.checked && putY <= callY) {
+        alert("⚠️ বাটন পজিশন ভুল হয়েছে!\n\nকোটেক্সে লাল (DOWN / PUT) বাটনটি সবুজ (UP / CALL) বাটনের নিচে থাকে।\nতাই Red PUT এর Y মান Green CALL এর চেয়ে বেশি হতে হবে।\n\nসঠিক স্ট্যান্ডার্ড মান:\n• Green CALL: X = 1805, Y = 485\n• Red PUT:   X = 1805, Y = 535");
+        return;
+      }
+
+      const payload = {
+        enabled: acEnabledToggle.checked,
+        call_x: parseInt(acCallX.value, 10),
+        call_y: callY,
+        put_x: parseInt(acPutX.value, 10),
+        put_y: putY,
+        restore_cursor: false
+      };
+
+      try {
+        await fetch('/api/autoclick/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        closeAutoClickModal();
+        fetchAutoClickConfig();
+        alert(payload.enabled ? "⚡ Direct Auto-Clicking is now ENABLED on Quotex!" : "Auto-Clicking is DISABLED.");
+      } catch (e) {
+        alert("Failed to save auto-clicker config.");
+      }
+    });
+
+    // Initial load
+    fetchSessionStatus();
+    fetchTradeHistory();
+    fetchLearningMemory();
+    fetchAutoClickConfig();
+    updateCandleClock();
+    setInterval(updateCandleClock, 500);
+  </script>
+</body>
+</html>
