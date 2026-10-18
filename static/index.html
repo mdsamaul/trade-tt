@@ -1676,6 +1676,8 @@
         const pnlFormatted = t.pnl >= 0 ? `+$${t.pnl.toFixed(2)}` : `-$${Math.abs(t.pnl).toFixed(2)}`;
         const pnlColor = t.pnl > 0 ? 'var(--neon-green)' : (t.pnl < 0 ? 'var(--neon-red)' : 'var(--text-muted)');
         const patternTag = t.pattern_name ? `<div style="font-size: 0.72rem; color: var(--neon-cyan); font-weight: 600; margin-bottom: 2px;">[${escapeHtml(t.pattern_name)}]</div>` : '';
+        const outcomeBox = t.outcome_reason ? `<div style="margin-top: 4px; padding: 4px 6px; border-radius: 4px; background: rgba(255,255,255,0.04); font-size: 0.72rem; color: #cbd5e1;">📊 <strong>Analysis:</strong> ${escapeHtml(t.outcome_reason)}</div>` : '';
+        const learnBox = t.learning_insight ? `<div style="margin-top: 3px; padding: 4px 6px; border-radius: 4px; background: rgba(56, 189, 248, 0.08); border-left: 2px solid var(--neon-cyan); font-size: 0.72rem; color: #38bdf8;">🧠 <strong>Learned:</strong> ${escapeHtml(t.learning_insight)}</div>` : '';
 
         return `
           <tr>
@@ -1687,7 +1689,7 @@
             <td class="font-mono" style="color: ${pnlColor}; font-weight: 700;">${pnlFormatted}</td>
             <td class="font-mono">${t.confidence.toFixed(1)}%</td>
             <td class="font-mono">L${t.strictness_level}</td>
-            <td style="max-width: 320px; font-size: 0.78rem; color: var(--text-muted);">${patternTag}<div>${escapeHtml(t.rationale)}</div></td>
+            <td style="max-width: 360px; font-size: 0.78rem; color: var(--text-muted);">${patternTag}<div>${escapeHtml(t.rationale)}</div>${outcomeBox}${learnBox}</td>
           </tr>
         `;
       }).join('');

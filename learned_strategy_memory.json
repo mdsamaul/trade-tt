@@ -1,98 +1,122 @@
 {
-  "BEARISH_RALLY_REJECTION_WEAK_WICK": {
-    "name": "BEARISH_RALLY_REJECTION_WEAK_WICK",
-    "total_trades": 5,
-    "wins": 1,
-    "losses": 4,
-    "draws": 0,
-    "win_rate": 20.0,
-    "consecutive_losses": 3,
-    "status": "BLOCKED",
-    "last_feedback": "LOSS: Weak upper wick (<25%) on green body. Market continued surging. BLOCKED by Self-Learning Engine.",
-    "learned_at": "2026-10-17 16:56:58"
+  "patterns": {
+    "BEARISH_RALLY_REJECTION_WEAK_WICK": {
+      "name": "BEARISH_RALLY_REJECTION_WEAK_WICK",
+      "total_trades": 5,
+      "wins": 1,
+      "losses": 4,
+      "draws": 0,
+      "win_rate": 20.0,
+      "consecutive_losses": 3,
+      "status": "BLOCKED",
+      "last_feedback": "LOSS: Weak upper wick (<25%) on green body. Market continued surging. BLOCKED by Self-Learning Engine.",
+      "learned_at": "2026-10-17 16:56:58"
+    },
+    "UPTREND_PULLBACK_REJECTION_WEAK_WICK": {
+      "name": "UPTREND_PULLBACK_REJECTION_WEAK_WICK",
+      "total_trades": 3,
+      "wins": 1,
+      "losses": 2,
+      "draws": 0,
+      "win_rate": 33.3,
+      "consecutive_losses": 1,
+      "status": "BLOCKED",
+      "last_feedback": "LOSS: Weak lower wick (<25%) on red body. Dip was not absorbed. BLOCKED by Self-Learning Engine.",
+      "learned_at": "2026-10-17 16:35:58"
+    },
+    "BULLISH_STRONG_HAMMER_REJECTION": {
+      "name": "BULLISH_STRONG_HAMMER_REJECTION",
+      "total_trades": 9,
+      "wins": 9,
+      "losses": 0,
+      "draws": 0,
+      "win_rate": 100.0,
+      "consecutive_losses": 0,
+      "status": "BOOSTED",
+      "last_feedback": "WIN: Bullish confirmation: Price rose by +0.00030 (1.08500 -> 1.08530). Trend STRONG_BULLISH buyer dominance prevailed.",
+      "learned_at": "2026-10-18 14:23:30"
+    },
+    "BULLISH_MOMENTUM_CONTINUATION": {
+      "name": "BULLISH_MOMENTUM_CONTINUATION",
+      "total_trades": 19,
+      "wins": 19,
+      "losses": 0,
+      "draws": 0,
+      "win_rate": 100.0,
+      "consecutive_losses": 0,
+      "status": "BOOSTED",
+      "last_feedback": "WIN: Successfully confirmed by price action. Uptrend Momentum Continuation: Solid green candle confirming continuous institutional buyer dominance. | [AI Learned Edge]: High-win-rate pattern 'BULLISH_MOMENTUM_CONTINUATION' (100% WR). Boosted with +4% confidence.",
+      "learned_at": "2026-10-18 13:49:58"
+    },
+    "BEARISH_STRONG_STAR_REJECTION": {
+      "name": "BEARISH_STRONG_STAR_REJECTION",
+      "total_trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "win_rate": 0.0,
+      "consecutive_losses": 0,
+      "status": "ACTIVE",
+      "last_feedback": "Selling pressure rejected bounce with upper wick >=20% and red body.",
+      "learned_at": "2026-10-17 23:10:00"
+    },
+    "BEARISH_MOMENTUM_CONTINUATION": {
+      "name": "BEARISH_MOMENTUM_CONTINUATION",
+      "total_trades": 0,
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "win_rate": 0.0,
+      "consecutive_losses": 0,
+      "status": "ACTIVE",
+      "last_feedback": "Solid red candle confirming continuous institutional seller dominance.",
+      "learned_at": "2026-10-17 23:10:00"
+    },
+    "RANGE_SUPPORT_BOUNCE": {
+      "name": "RANGE_SUPPORT_BOUNCE",
+      "total_trades": 25,
+      "wins": 23,
+      "losses": 2,
+      "draws": 0,
+      "win_rate": 92.0,
+      "consecutive_losses": 0,
+      "status": "BOOSTED",
+      "last_feedback": "WIN: Successfully confirmed by price action. Sideways Range Bounce: Buyers strongly defending the support floor with green reaction. | [AI Learned Edge]: High-win-rate pattern 'RANGE_SUPPORT_BOUNCE' (92% WR). Boosted with +4% confidence.",
+      "learned_at": "2026-10-17 17:57:58"
+    },
+    "RANGE_RESISTANCE_REJECTION": {
+      "name": "RANGE_RESISTANCE_REJECTION",
+      "total_trades": 3,
+      "wins": 1,
+      "losses": 2,
+      "draws": 0,
+      "win_rate": 33.3,
+      "consecutive_losses": 0,
+      "status": "ACTIVE",
+      "last_feedback": "Reset to ACTIVE. Guardrail restricts it strictly to sideways range ceilings.",
+      "learned_at": "2026-10-18 14:12:58"
+    }
   },
-  "UPTREND_PULLBACK_REJECTION_WEAK_WICK": {
-    "name": "UPTREND_PULLBACK_REJECTION_WEAK_WICK",
-    "total_trades": 3,
-    "wins": 1,
-    "losses": 2,
-    "draws": 0,
-    "win_rate": 33.3,
-    "consecutive_losses": 1,
-    "status": "BLOCKED",
-    "last_feedback": "LOSS: Weak lower wick (<25%) on red body. Dip was not absorbed. BLOCKED by Self-Learning Engine.",
-    "learned_at": "2026-10-17 16:35:58"
-  },
-  "BULLISH_STRONG_HAMMER_REJECTION": {
-    "name": "BULLISH_STRONG_HAMMER_REJECTION",
-    "total_trades": 2,
-    "wins": 2,
-    "losses": 0,
-    "draws": 0,
-    "win_rate": 100.0,
-    "consecutive_losses": 0,
-    "status": "BOOSTED",
-    "last_feedback": "WIN: Institutional buying absorption confirmed with >=40% lower wick. High conviction.",
-    "learned_at": "2026-10-17 16:41:58"
-  },
-  "BULLISH_MOMENTUM_CONTINUATION": {
-    "name": "BULLISH_MOMENTUM_CONTINUATION",
-    "total_trades": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "win_rate": 0.0,
-    "consecutive_losses": 0,
-    "status": "ACTIVE",
-    "last_feedback": "Solid green candle confirming continuous institutional buyer dominance.",
-    "learned_at": "2026-10-17 23:10:00"
-  },
-  "BEARISH_STRONG_STAR_REJECTION": {
-    "name": "BEARISH_STRONG_STAR_REJECTION",
-    "total_trades": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "win_rate": 0.0,
-    "consecutive_losses": 0,
-    "status": "ACTIVE",
-    "last_feedback": "Selling pressure rejected bounce with upper wick >=20% and red body.",
-    "learned_at": "2026-10-17 23:10:00"
-  },
-  "BEARISH_MOMENTUM_CONTINUATION": {
-    "name": "BEARISH_MOMENTUM_CONTINUATION",
-    "total_trades": 0,
-    "wins": 0,
-    "losses": 0,
-    "draws": 0,
-    "win_rate": 0.0,
-    "consecutive_losses": 0,
-    "status": "ACTIVE",
-    "last_feedback": "Solid red candle confirming continuous institutional seller dominance.",
-    "learned_at": "2026-10-17 23:10:00"
-  },
-  "RANGE_SUPPORT_BOUNCE": {
-    "name": "RANGE_SUPPORT_BOUNCE",
-    "total_trades": 25,
-    "wins": 23,
-    "losses": 2,
-    "draws": 0,
-    "win_rate": 92.0,
-    "consecutive_losses": 0,
-    "status": "BOOSTED",
-    "last_feedback": "WIN: Successfully confirmed by price action. Sideways Range Bounce: Buyers strongly defending the support floor with green reaction. | [AI Learned Edge]: High-win-rate pattern 'RANGE_SUPPORT_BOUNCE' (92% WR). Boosted with +4% confidence.",
-    "learned_at": "2026-10-17 17:57:58"
-  },
-  "RANGE_RESISTANCE_REJECTION": {
-    "name": "RANGE_RESISTANCE_REJECTION",
-    "total_trades": 1,
-    "wins": 1,
-    "losses": 0,
-    "draws": 0,
-    "win_rate": 100.0,
-    "consecutive_losses": 0,
-    "status": "BOOSTED",
-    "last_feedback": "WIN: Resistance ceiling held firmly during sideways market.",
-    "learned_at": "2026-10-17 16:40:58"
-  }
+  "learned_rules": [
+    "RULE_1: STRICT_TREND_FOLLOWING_MANDATE (Never trade against dominant trend; UP -> CALL only, DOWN -> PUT only)",
+    "RULE_2: COUNTER_TREND_FADING_PROHIBITED (Block PUT in Bullish trends, Block CALL in Bearish trends)",
+    "RULE_3: CONFIRMED_BREAKOUT_CONFLUENCE (Allow breakout continuations when body and volume expand)",
+    "RULE_4: AUTOMATIC_LOSS_DEFENSE (Auto-tighten strictness and analyze root causes upon every loss)"
+  ],
+  "trades_history": [
+    {
+      "id": "ab3fc261",
+      "timestamp": "14:23:30",
+      "direction": "CALL",
+      "entry_price": 1.085,
+      "close_price": 1.0853,
+      "outcome": "WIN",
+      "pnl": 85.0,
+      "confidence": 90.0,
+      "pattern_name": "BULLISH_STRONG_HAMMER_REJECTION",
+      "trend": "STRONG_BULLISH",
+      "outcome_reason": "Bullish confirmation: Price rose by +0.00030 (1.08500 -> 1.08530). Trend STRONG_BULLISH buyer dominance prevailed.",
+      "learning_insight": "Confirmed winning edge on BULLISH_STRONG_HAMMER_REJECTION: Trend-following CALL reinforced."
+    }
+  ]
 }

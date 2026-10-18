@@ -107,6 +107,8 @@ class TradeRecord(BaseModel):
     balance_after: float = 10000.0
     expiry_timestamp: float = 0.0  # Unix timestamp when candle closes
     pattern_name: str = "Standard"
+    outcome_reason: str = ""
+    learning_insight: str = ""
     indicators_summary: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -152,14 +154,21 @@ class PatternMemory(BaseModel):
 class StrategyLearner:
     """
     Self-Adaptive Machine Learning Engine for Quantitative Binary Options:
-    1. Tracks outcome metrics per setup pattern.
-    2. Identifies loss patterns and automatically blocks/penalizes them.
-    3. Identifies winning patterns and reinforces/boosts them.
-    4. Persists learned intelligence to disk so lessons are never forgotten across sessions.
+    1. Enforces Trend-Following Mandate: UP -> CALL only, DOWN -> PUT only. Counter-trend trades strictly blocked.
+    2. Records complete post-mortem root cause analysis and tactical lessons for every trade into history.
+    3. Auto-adapts strictness, penalizes toxic patterns, and reinforces winning setups.
+    4. Persists learned intelligence and trade history to disk across sessions.
     """
     def __init__(self):
         self.lock = threading.Lock()
         self.memory: Dict[str, PatternMemory] = {}
+        self.trades_history: List[Dict[str, Any]] = []
+        self.learned_rules: List[str] = [
+            "RULE_1: STRICT_TREND_FOLLOWING_MANDATE (Never trade against dominant trend; UP -> CALL only, DOWN -> PUT only)",
+            "RULE_2: COUNTER_TREND_FADING_PROHIBITED (Block PUT in Bullish trends, Block CALL in Bearish trends)",
+            "RULE_3: CONFIRMED_BREAKOUT_CONFLUENCE (Allow breakout continuations when body and volume expand)",
+            "RULE_4: AUTOMATIC_LOSS_DEFENSE (Auto-tighten strictness and analyze root causes upon every loss)"
+        ]
         self._load_memory()
 
     def _load_memory(self):
@@ -167,30 +176,68 @@ class StrategyLearner:
             if LEARNED_MEMORY_FILE.exists():
                 with open(LEARNED_MEMORY_FILE, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    for k, v in data.items():
-                        self.memory[k] = PatternMemory(**v)
-                    logger.info(f"Loaded {len(self.memory)} learned strategy patterns from memory.")
+                    if "patterns" in data:
+                        for k, v in data.get("patterns", {}).items():
+                            self.memory[k] = PatternMemory(**v)
+                        self.trades_history = data.get("trades_history", [])
+                        if "learned_rules" in data:
+                            self.learned_rules = data.get("learned_rules", self.learned_rules)
+                    else:
+                        for k, v in data.items():
+                            self.memory[k] = PatternMemory(**v)
+                        self.trades_history = []
+
+                    # Reset RANGE_RESISTANCE_REJECTION if it was wrongly blocked by counter-trend bug
+                    if "RANGE_RESISTANCE_REJECTION" in self.memory:
+                        mem = self.memory["RANGE_RESISTANCE_REJECTION"]
+                        if mem.status == "BLOCKED":
+                            mem.status = "ACTIVE"
+                            mem.consecutive_losses = 0
+                            mem.last_feedback = "Reset to ACTIVE. Guardrail restricts it strictly to sideways range ceilings."
+
+                    logger.info(f"Loaded {len(self.memory)} learned strategy patterns and {len(self.trades_history)} trade logs from memory.")
         except Exception as e:
             logger.warning(f"Failed to load learned strategy memory: {e}")
 
     def _save_memory(self):
         try:
             with open(LEARNED_MEMORY_FILE, "w", encoding="utf-8") as f:
-                json.dump({k: v.model_dump() for k, v in self.memory.items()}, f, indent=2)
+                dump_data = {
+                    "patterns": {k: v.model_dump() for k, v in self.memory.items()},
+                    "learned_rules": self.learned_rules,
+                    "trades_history": self.trades_history[:100]
+                }
+                json.dump(dump_data, f, indent=2)
         except Exception as e:
             logger.warning(f"Failed to save learned strategy memory: {e}")
 
-    def check_pattern_allowed(self, pattern_key: str, candle_color: str, wick_ratio: float) -> Tuple[bool, float, str]:
+    def check_pattern_allowed(
+        self,
+        pattern_key: str,
+        candle_color: str,
+        wick_ratio: float,
+        trend: str = "NEUTRAL",
+        direction: str = "CALL"
+    ) -> Tuple[bool, float, str]:
         """
         Evaluates whether a candidate trade setup is permitted by the Self-Learning Engine.
         Returns: (is_allowed, confidence_delta, rationale)
         """
         with self.lock:
-            # Absolute Rule: Never buy CALL on red candle, never buy PUT on green candle (unless massive wick >= 0.50)
-            if any(k in pattern_key for k in ["CALL", "BULLISH"]) and candle_color == "RED" and wick_ratio < 0.50:
+            # Absolute Rule 1: Anti-Martingale / Counter-Trend Ban
+            # Never short a bull market (UP -> CALL only)
+            if direction == "PUT" and trend in ["STRONG_BULLISH", "MILD_BULLISH"]:
+                return False, -30.0, f"[AI Trend Guardrail]: Blocked PUT trade against dominant {trend} market. UP trend requires CALL."
+
+            # Never buy into a bear market (DOWN -> PUT only)
+            if direction == "CALL" and trend in ["STRONG_BEARISH", "MILD_BEARISH"]:
+                return False, -30.0, f"[AI Trend Guardrail]: Blocked CALL trade against dominant {trend} market. DOWN trend requires PUT."
+
+            # Absolute Rule 2: Never buy CALL on red candle, never buy PUT on green candle (unless massive wick >= 0.40)
+            if direction == "CALL" and candle_color == "RED" and wick_ratio < 0.40:
                 return False, -20.0, "[AI Learned Defense]: Blocked CALL on active RED candle without institutional hammer wick."
 
-            if any(k in pattern_key for k in ["PUT", "BEARISH"]) and candle_color == "GREEN" and wick_ratio < 0.50:
+            if direction == "PUT" and candle_color == "GREEN" and wick_ratio < 0.40:
                 return False, -20.0, "[AI Learned Defense]: Blocked PUT on active GREEN candle without institutional shooting star wick."
 
             mem = self.memory.get(pattern_key)
@@ -208,13 +255,16 @@ class StrategyLearner:
 
             return True, 0.0, "Pattern permitted under standard statistical conditions."
 
-    def learn_from_trade(self, pattern_key: str, outcome: str, rationale: str):
+    def learn_from_trade(self, trade: Any):
         """
         Updates machine learning memory when a trade finishes with WIN, LOSS, or DRAW.
+        Saves exact root cause post-mortem and learning insights to permanent history.
         """
         with self.lock:
-            if not pattern_key:
-                pattern_key = "GENERAL_PRICE_ACTION"
+            pattern_key = getattr(trade, "pattern_name", "GENERAL_PRICE_ACTION") or "GENERAL_PRICE_ACTION"
+            outcome = getattr(trade, "outcome", "DRAW") or "DRAW"
+            outcome_reason = getattr(trade, "outcome_reason", "") or getattr(trade, "rationale", "")
+            learning_insight = getattr(trade, "learning_insight", "")
 
             mem = self.memory.get(pattern_key)
             if not mem:
@@ -225,11 +275,11 @@ class StrategyLearner:
             if outcome == "WIN":
                 mem.wins += 1
                 mem.consecutive_losses = 0
-                mem.last_feedback = f"WIN: Successfully confirmed by price action. {rationale}"
+                mem.last_feedback = f"WIN: {outcome_reason}"
             elif outcome == "LOSS":
                 mem.losses += 1
                 mem.consecutive_losses += 1
-                mem.last_feedback = f"LOSS: Setup failed to produce expected continuation/reversal. {rationale}"
+                mem.last_feedback = f"LOSS: {outcome_reason} | {learning_insight}"
             else:
                 mem.draws += 1
 
@@ -250,13 +300,35 @@ class StrategyLearner:
             else:
                 mem.status = "ACTIVE"
 
+            # Record detailed trade log in persistent memory
+            history_entry = {
+                "id": getattr(trade, "id", ""),
+                "timestamp": getattr(trade, "timestamp", ""),
+                "direction": getattr(trade, "direction", ""),
+                "entry_price": getattr(trade, "entry_price", 0.0),
+                "close_price": getattr(trade, "close_price", 0.0),
+                "outcome": outcome,
+                "pnl": getattr(trade, "pnl", 0.0),
+                "confidence": getattr(trade, "confidence", 0.0),
+                "pattern_name": pattern_key,
+                "trend": getattr(trade, "trend", ""),
+                "outcome_reason": outcome_reason,
+                "learning_insight": learning_insight
+            }
+            self.trades_history.insert(0, history_entry)
+            if len(self.trades_history) > 100:
+                self.trades_history = self.trades_history[:100]
+
             self._save_memory()
 
     def get_learning_summary(self) -> Dict[str, Any]:
         with self.lock:
             return {
                 "total_learned_patterns": len(self.memory),
-                "patterns": {k: v.model_dump() for k, v in self.memory.items()}
+                "patterns": {k: v.model_dump() for k, v in self.memory.items()},
+                "learned_rules": self.learned_rules,
+                "total_history_logs": len(self.trades_history),
+                "recent_history": self.trades_history[:10]
             }
 
 strategy_learner = StrategyLearner()
@@ -382,17 +454,26 @@ class VisionProcessor:
             c_r = np.count_nonzero(red_mask[by:by+bh, bx:bx+bw])
             color = "GREEN" if c_g >= c_r else "RED"
 
-            # Profile vertical density to detect body vs wicks
+            # Profile vertical density to detect body vs wicks with high precision on thin candles
             vert_profile = np.count_nonzero(all_candles_mask[by:by+bh, bx:bx+bw], axis=1)
             max_thick = np.max(vert_profile) if len(vert_profile) > 0 else 1
-            body_rows = np.where(vert_profile >= max(2, int(max_thick * 0.55)))[0]
+            
+            # Candle body is significantly wider than the 1-2 pixel wick
+            if max_thick >= 5:
+                body_th = max_thick - 1
+            elif max_thick in (3, 4):
+                body_th = max_thick
+            else:
+                body_th = max_thick
+
+            body_rows = np.where(vert_profile >= body_th)[0]
 
             if len(body_rows) > 0:
                 body_top = by + int(body_rows[0])
                 body_bot = by + int(body_rows[-1])
             else:
-                body_top = by + int(bh * 0.25)
-                body_bot = by + int(bh * 0.75)
+                body_top = by + int(bh * 0.20)
+                body_bot = by + int(bh * 0.80)
 
             wick_top = max(0, body_top - by)
             wick_bot = max(0, (by + bh) - body_bot)
@@ -432,26 +513,27 @@ class VisionProcessor:
             pos_ratio = (active_candle["close_y"] - resistance_y) / channel_h
             pos_ratio = min(1.0, max(0.0, pos_ratio))
 
-            # Bulletproof Trend diagnosis combining price slope and candle color consensus
+            # Unbiased trend diagnosis using true candle midpoints and color consensus
             sample_candles = candles_data[-10:] if len(candles_data) >= 10 else candles_data
-            close_prices = [float(h - c["close_y"]) for c in sample_candles]
+            mid_prices = [float(h - (c["high"] + c["low"]) / 2.0) for c in sample_candles]
             
             recent_candles = sample_candles[-6:]
             green_count = sum(1 for c in recent_candles if c["color"] == "GREEN")
             red_count = sum(1 for c in recent_candles if c["color"] == "RED")
 
-            if len(close_prices) >= 4:
-                ema_fast = float(np.mean(close_prices[-3:]))
-                ema_slow = float(np.mean(close_prices))
+            if len(mid_prices) >= 4:
+                ema_fast = float(np.mean(mid_prices[-3:]))
+                ema_slow = float(np.mean(mid_prices))
                 delta_ema = ema_fast - ema_slow
-                
-                if (green_count >= 4 or (green_count >= 3 and delta_ema > 1.5)) and delta_ema >= -0.5:
+
+                # Symmetrical, robust trend classification
+                if green_count >= 4 and delta_ema > 2.0:
                     trend = "STRONG_BULLISH"
-                elif (red_count >= 4 or (red_count >= 3 and delta_ema < -1.5)) and delta_ema <= 0.5:
+                elif red_count >= 4 and delta_ema < -2.0:
                     trend = "STRONG_BEARISH"
-                elif green_count > red_count and delta_ema > 0.0:
+                elif green_count > red_count and delta_ema > 0.5:
                     trend = "MILD_BULLISH"
-                elif red_count > green_count and delta_ema < -0.0:
+                elif red_count > green_count and delta_ema < -0.5:
                     trend = "MILD_BEARISH"
                 else:
                     trend = "SIDEWAYS_CONSOLIDATION"
@@ -701,7 +783,9 @@ You MUST respond strictly in valid JSON format matching this schema:
             is_allowed, conf_delta, learner_rationale = strategy_learner.check_pattern_allowed(
                 pattern_key=pattern_name,
                 candle_color="GREEN" if direction == "CALL" else "RED",
-                wick_ratio=wick_for_eval
+                wick_ratio=wick_for_eval,
+                trend=trend,
+                direction=direction
             )
             confidence += conf_delta
             if not is_allowed:
@@ -813,28 +897,44 @@ You MUST respond strictly in valid JSON format matching this schema:
         reasoning = "Consolidation / Indecisive candle structure. Awaiting A+ S&R level confirmation."
 
         # =========================================================================
-        # PROVEN SETUP 1: STRICT BULLISH TREND ALIGNMENT (CALL ONLY)
+        # PROVEN QUANTITATIVE ARCHITECTURE: STRICT TREND-FOLLOWING + S&R CONFLUENCE
+        # Golden Rule: Never trade against the dominant market trend.
+        # UP TREND -> CALL ONLY (Pullbacks, Momentum, Breakouts)
+        # DOWN TREND -> PUT ONLY (Rallies, Momentum, Breakdowns)
+        # SIDEWAYS -> S&R Boundary Reversals
         # =========================================================================
+
+        # Setup 1: Strict Bullish Trend Alignment (UP TREND -> CALL ONLY)
         if trend in ["STRONG_BULLISH", "MILD_BULLISH"]:
-            # Setup 1A: Pullback Dip Rejection (Green candle with distinct lower rejection wick)
-            if active_c["color"] == "GREEN" and active_c["lower_wick_ratio"] >= 0.20:
+            # Setup 1A: Pullback Dip Rejection (Green candle with lower rejection wick)
+            if active_c["color"] == "GREEN" and active_c["lower_wick_ratio"] >= 0.12:
                 direction = "CALL"
                 confidence = 86.0 + (active_c["lower_wick_ratio"] * 15.0)
                 grade = "A+"
                 rejection_wick = True
-                level_name = "Bullish Trend Dynamic EMA Support"
+                level_name = "Bullish Dynamic EMA Support"
                 pattern_name = "BULLISH_STRONG_HAMMER_REJECTION"
-                reasoning = f"A+ Uptrend Pullback Rejection: Buying pressure absorbed the dip ({active_c['lower_wick_ratio']*100:.0f}% lower wick). Dominant trend is bullish."
+                reasoning = f"A+ Uptrend Pullback Rejection: Buying pressure absorbed the dip ({active_c['lower_wick_ratio']*100:.0f}% lower wick). Aligned with {trend}."
 
-            # Setup 1B: Solid Bullish Momentum Candle (Healthy body pushing upward)
-            elif active_c["color"] == "GREEN" and active_c["body_ratio"] >= 0.45:
+            # Setup 1B: Solid Bullish Momentum Continuation (Healthy green body driving higher)
+            elif active_c["color"] == "GREEN" and active_c["body_ratio"] >= 0.35:
                 direction = "CALL"
-                confidence = 84.0 + (active_c["body_ratio"] * 8.0)
+                confidence = 86.0 + (active_c["body_ratio"] * 10.0)
                 grade = "A"
                 rejection_wick = True
-                level_name = "Bullish Momentum Continuation"
+                level_name = "Bullish Momentum Expansion"
                 pattern_name = "BULLISH_MOMENTUM_CONTINUATION"
-                reasoning = "Uptrend Momentum Continuation: Solid green candle confirming continuous institutional buyer dominance."
+                reasoning = f"Uptrend Momentum Continuation: Solid green candle ({active_c['body_ratio']*100:.0f}% body) driving upward in {trend}."
+
+            # Setup 1C: Bullish Breakout Continuation (Price expanding channel highs)
+            elif active_c["color"] == "GREEN" and pos <= 0.25:
+                direction = "CALL"
+                confidence = 87.0 + (active_c["body_ratio"] * 8.0)
+                grade = "A+"
+                rejection_wick = True
+                level_name = "Bullish Channel High Breakout"
+                pattern_name = "BULLISH_MOMENTUM_CONTINUATION"
+                reasoning = f"Bullish High Breakout: Buyers surging through upper channel ({pos*100:.0f}% channel pos) with green power."
 
             else:
                 direction = "SKIP"
@@ -842,32 +942,40 @@ You MUST respond strictly in valid JSON format matching this schema:
                 grade = "C"
                 rejection_wick = False
                 pattern_name = "BULLISH_PULLBACK_WAIT"
-                level_name = "Uptrend Pause"
-                reasoning = "Bullish trend pause. Waiting for clean green dip rejection or solid momentum candle."
+                level_name = "Uptrend Pullback"
+                reasoning = f"Uptrend pause in {trend}. Candle is red or indecisive. Waiting for green dip absorption or next impulse (Never short an uptrend)."
 
-        # =========================================================================
-        # PROVEN SETUP 2: STRICT BEARISH TREND ALIGNMENT (PUT ONLY)
-        # =========================================================================
+        # Setup 2: Strict Bearish Trend Alignment (DOWN TREND -> PUT ONLY)
         elif trend in ["STRONG_BEARISH", "MILD_BEARISH"]:
-            # Setup 2A: Rally Rejection (Red candle with distinct upper rejection wick)
-            if active_c["color"] == "RED" and active_c["upper_wick_ratio"] >= 0.20:
+            # Setup 2A: Rally Rejection (Red candle with upper rejection wick)
+            if active_c["color"] == "RED" and active_c["upper_wick_ratio"] >= 0.12:
                 direction = "PUT"
                 confidence = 86.0 + (active_c["upper_wick_ratio"] * 15.0)
                 grade = "A+"
                 rejection_wick = True
-                level_name = "Bearish Trend Dynamic EMA Resistance"
+                level_name = "Bearish Dynamic EMA Resistance"
                 pattern_name = "BEARISH_STRONG_STAR_REJECTION"
-                reasoning = f"A+ Downtrend Rally Rejection: Selling pressure rejected the bounce ({active_c['upper_wick_ratio']*100:.0f}% upper wick). Dominant trend is bearish."
+                reasoning = f"A+ Downtrend Rally Rejection: Selling pressure rejected the bounce ({active_c['upper_wick_ratio']*100:.0f}% upper wick). Aligned with {trend}."
 
-            # Setup 2B: Solid Bearish Momentum Candle (Healthy body pushing downward)
-            elif active_c["color"] == "RED" and active_c["body_ratio"] >= 0.45:
+            # Setup 2B: Solid Bearish Momentum Continuation (Healthy red body driving lower)
+            elif active_c["color"] == "RED" and active_c["body_ratio"] >= 0.35:
                 direction = "PUT"
-                confidence = 84.0 + (active_c["body_ratio"] * 8.0)
+                confidence = 86.0 + (active_c["body_ratio"] * 10.0)
                 grade = "A"
                 rejection_wick = True
-                level_name = "Bearish Momentum Continuation"
+                level_name = "Bearish Momentum Expansion"
                 pattern_name = "BEARISH_MOMENTUM_CONTINUATION"
-                reasoning = "Downtrend Momentum Continuation: Solid red candle confirming continuous institutional seller dominance."
+                reasoning = f"Downtrend Momentum Continuation: Solid red candle ({active_c['body_ratio']*100:.0f}% body) driving downward in {trend}."
+
+            # Setup 2C: Bearish Breakdown Continuation (Price expanding channel lows)
+            elif active_c["color"] == "RED" and pos >= 0.75:
+                direction = "PUT"
+                confidence = 87.0 + (active_c["body_ratio"] * 8.0)
+                grade = "A+"
+                rejection_wick = True
+                level_name = "Bearish Channel Low Breakdown"
+                pattern_name = "BEARISH_MOMENTUM_CONTINUATION"
+                reasoning = f"Bearish Low Breakdown: Sellers surging through lower channel ({pos*100:.0f}% channel pos) with red power."
 
             else:
                 direction = "SKIP"
@@ -875,29 +983,27 @@ You MUST respond strictly in valid JSON format matching this schema:
                 grade = "C"
                 rejection_wick = False
                 pattern_name = "BEARISH_RALLY_WAIT"
-                level_name = "Downtrend Pause"
-                reasoning = "Bearish trend pause. Waiting for clean red rally rejection or solid momentum candle."
+                level_name = "Downtrend Pullback"
+                reasoning = f"Downtrend pause in {trend}. Candle is green or indecisive. Waiting for red rally rejection or next impulse (Never buy into a downtrend)."
 
-        # =========================================================================
-        # PROVEN SETUP 3: SIDEWAYS RANGE BOUNDARY REVERSALS
-        # =========================================================================
+        # Setup 3: Sideways Range Boundary Reversals (RANGE MARKET -> S&R ONLY)
         elif trend == "SIDEWAYS_CONSOLIDATION":
-            # 3A. Support Floor Rejection (CALL) - Must be green candle bounce at floor
-            if pos >= 0.60 and active_c["color"] == "GREEN" and (active_c["lower_wick_ratio"] >= 0.20 or active_c["body_ratio"] >= 0.40):
+            # 3A. Support Floor Rejection (CALL) - Green candle bounce at floor
+            if pos >= 0.55 and active_c["color"] == "GREEN" and (active_c["lower_wick_ratio"] >= 0.15 or active_c["body_ratio"] >= 0.35):
                 direction = "CALL"
-                confidence = 85.0 + (active_c["lower_wick_ratio"] * 12.0)
+                confidence = 86.0 + (active_c["lower_wick_ratio"] * 12.0)
                 grade = "A"
-                rejection_wick = (active_c["lower_wick_ratio"] >= 0.20)
+                rejection_wick = (active_c["lower_wick_ratio"] >= 0.15)
                 level_name = "Range Support Floor"
                 pattern_name = "RANGE_SUPPORT_BOUNCE"
                 reasoning = "Sideways Range Bounce: Buyers strongly defending the support floor with green reaction."
 
-            # 3B. Resistance Ceiling Rejection (PUT) - Must be red candle rejection at ceiling
-            elif pos <= 0.40 and active_c["color"] == "RED" and (active_c["upper_wick_ratio"] >= 0.20 or active_c["body_ratio"] >= 0.40):
+            # 3B. Resistance Ceiling Rejection (PUT) - Red candle rejection at ceiling
+            elif pos <= 0.45 and active_c["color"] == "RED" and (active_c["upper_wick_ratio"] >= 0.15 or active_c["body_ratio"] >= 0.35):
                 direction = "PUT"
-                confidence = 85.0 + (active_c["upper_wick_ratio"] * 12.0)
+                confidence = 86.0 + (active_c["upper_wick_ratio"] * 12.0)
                 grade = "A"
-                rejection_wick = (active_c["upper_wick_ratio"] >= 0.20)
+                rejection_wick = (active_c["upper_wick_ratio"] >= 0.15)
                 level_name = "Range Resistance Ceiling"
                 pattern_name = "RANGE_RESISTANCE_REJECTION"
                 reasoning = "Sideways Range Rejection: Sellers strongly defending the resistance ceiling with red reaction."
@@ -926,7 +1032,9 @@ You MUST respond strictly in valid JSON format matching this schema:
             is_allowed, conf_delta, learner_rationale = strategy_learner.check_pattern_allowed(
                 pattern_key=pattern_name,
                 candle_color=active_c["color"],
-                wick_ratio=wick_for_eval
+                wick_ratio=wick_for_eval,
+                trend=trend,
+                direction=direction
             )
             confidence += conf_delta
             if not is_allowed:
@@ -1212,6 +1320,32 @@ class TradingSessionManager:
             self.total_trades += 1
             trade.balance_after = self.balance
 
+            # Compute detailed Post-Mortem Root Cause Analysis & Learning Insight
+            price_delta = round(close_price - entry_price, 5)
+            if outcome == "WIN":
+                if direction == "CALL":
+                    trade.outcome_reason = f"Bullish confirmation: Price rose by +{price_delta:.5f} ({entry_price:.5f} -> {close_price:.5f}). Trend {trade.trend} buyer dominance prevailed."
+                    trade.learning_insight = f"Confirmed winning edge on {trade.pattern_name}: Trend-following CALL reinforced."
+                else:
+                    trade.outcome_reason = f"Bearish confirmation: Price fell by {price_delta:.5f} ({entry_price:.5f} -> {close_price:.5f}). Trend {trade.trend} seller dominance prevailed."
+                    trade.learning_insight = f"Confirmed winning edge on {trade.pattern_name}: Trend-following PUT reinforced."
+            elif outcome == "LOSS":
+                if direction == "CALL":
+                    trade.outcome_reason = f"CALL thesis invalidated: Price fell by {price_delta:.5f} ({entry_price:.5f} -> {close_price:.5f}) against CALL entry."
+                    if "BEARISH" in trade.trend:
+                        trade.learning_insight = f"CRITICAL LOSS AVOIDANCE: Never buy CALL during {trade.trend}. Counter-trend trades penalized."
+                    else:
+                        trade.learning_insight = "Bullish momentum failed or hit resistance ceiling. Increased strictness on wick/body filters."
+                else: # PUT
+                    trade.outcome_reason = f"PUT thesis invalidated: Price climbed by +{price_delta:.5f} ({entry_price:.5f} -> {close_price:.5f}) against PUT entry."
+                    if "BULLISH" in trade.trend:
+                        trade.learning_insight = f"CRITICAL LOSS AVOIDANCE: Never buy PUT during {trade.trend}. Counter-trend trades penalized."
+                    else:
+                        trade.learning_insight = "Bearish momentum failed or bounced from support floor. Increased strictness on wick/body filters."
+            else:
+                trade.outcome_reason = f"Price closed neutral at entry price {entry_price:.5f}."
+                trade.learning_insight = "Zero volatility chop. Preserving capital."
+
             # Update rolling accuracy window
             self.rolling_outcomes.append(outcome)
 
@@ -1224,11 +1358,7 @@ class TradingSessionManager:
 
             # AI Strategy Learner Feedback (Self-Adaptive Machine Learning)
             try:
-                strategy_learner.learn_from_trade(
-                    pattern_key=trade.pattern_name,
-                    outcome=outcome,
-                    rationale=trade.rationale
-                )
+                strategy_learner.learn_from_trade(trade)
             except Exception as e:
                 logger.warning(f"StrategyLearner feedback error: {e}")
 
