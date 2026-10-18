@@ -166,7 +166,12 @@ async def analyze_and_trade(payload: AnalyzeRequest):
                     timeframe_seconds=payload.timeframe_seconds,
                     indicators_summary={
                         "rejection_wick_found": decision_data.get("rejection_wick_found", False),
-                        "key_level": decision_data.get("support_resistance_level", "")
+                        "key_level": decision_data.get("support_resistance_level", ""),
+                        "pos_ratio": decision_data.get("pos_ratio", 0.5),
+                        "streak": decision_data.get("streak", 0),
+                        "opposing_wick_ratio": decision_data.get("opposing_wick_ratio", 0.0),
+                        "body_ratio": decision_data.get("body_ratio", 0.5),
+                        "candle_color": decision_data.get("candle_color", "GREEN" if direction == "CALL" else "RED")
                     }
                 )
                 # Execute direct mouse click on Quotex UP / DOWN button if enabled
@@ -293,7 +298,16 @@ async def auto_cycle(payload: AutoCycleRequest):
                 trend=decision["trend"],
                 setup_grade=decision["setup_grade"],
                 pattern_name=decision.get("pattern_name", "Standard"),
-                timeframe_seconds=payload.timeframe_seconds
+                timeframe_seconds=payload.timeframe_seconds,
+                indicators_summary={
+                    "rejection_wick_found": decision.get("rejection_wick_found", False),
+                    "key_level": decision.get("support_resistance_level", ""),
+                    "pos_ratio": decision.get("pos_ratio", 0.5),
+                    "streak": decision.get("streak", 0),
+                    "opposing_wick_ratio": decision.get("opposing_wick_ratio", 0.0),
+                    "body_ratio": decision.get("body_ratio", 0.5),
+                    "candle_color": decision.get("candle_color", "GREEN" if direction == "CALL" else "RED")
+                }
             )
             action = f"TRADE_OPENED_{direction}"
             # Execute direct mouse click on Quotex UP / DOWN button if enabled
@@ -453,4 +467,4 @@ if __name__ == "__main__":
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "8000"))
     logger.info(f"Starting Quotex Autonomous Paper-Trading Agent at http://localhost:{port}")
-    uvicorn.run(app, host=host, port=port)
+    uvicorn.run("main:app", host=host, port=port, reload=False)

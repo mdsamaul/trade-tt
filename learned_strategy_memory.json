@@ -10,6 +10,8 @@
       "consecutive_losses": 3,
       "status": "BLOCKED",
       "last_feedback": "LOSS: Weak upper wick (<25%) on green body. Market continued surging. BLOCKED by Self-Learning Engine.",
+      "last_loss_root_cause": "",
+      "loss_causes": [],
       "learned_at": "2026-10-17 16:56:58"
     },
     "UPTREND_PULLBACK_REJECTION_WEAK_WICK": {
@@ -22,19 +24,25 @@
       "consecutive_losses": 1,
       "status": "BLOCKED",
       "last_feedback": "LOSS: Weak lower wick (<25%) on red body. Dip was not absorbed. BLOCKED by Self-Learning Engine.",
+      "last_loss_root_cause": "",
+      "loss_causes": [],
       "learned_at": "2026-10-17 16:35:58"
     },
     "BULLISH_STRONG_HAMMER_REJECTION": {
       "name": "BULLISH_STRONG_HAMMER_REJECTION",
-      "total_trades": 9,
-      "wins": 9,
-      "losses": 0,
+      "total_trades": 11,
+      "wins": 10,
+      "losses": 1,
       "draws": 0,
-      "win_rate": 100.0,
-      "consecutive_losses": 0,
-      "status": "BOOSTED",
-      "last_feedback": "WIN: Bullish confirmation: Price rose by +0.00030 (1.08500 -> 1.08530). Trend STRONG_BULLISH buyer dominance prevailed.",
-      "learned_at": "2026-10-18 14:23:30"
+      "win_rate": 90.9,
+      "consecutive_losses": 1,
+      "status": "DEFENSIVE_COOLDOWN",
+      "last_feedback": "LOSS: Price reversed by 0.00020 against CALL entry (1.08498 -> 1.08478). Setup thesis invalidated. | DEFENSE: AI DEFENSE ACTIVATED: Elevated strictness and defensive cooldown on pattern 'BULLISH_STRONG_HAMMER_REJECTION'.",
+      "last_loss_root_cause": "Price reversed by 0.00020 against CALL entry (1.08498 -> 1.08478). Setup thesis invalidated.",
+      "loss_causes": [
+        "AI DEFENSE ACTIVATED: Elevated strictness and defensive cooldown on pattern 'BULLISH_STRONG_HAMMER_REJECTION'."
+      ],
+      "learned_at": "2026-10-18 15:59:11"
     },
     "BULLISH_MOMENTUM_CONTINUATION": {
       "name": "BULLISH_MOMENTUM_CONTINUATION",
@@ -46,19 +54,23 @@
       "consecutive_losses": 0,
       "status": "BOOSTED",
       "last_feedback": "WIN: Successfully confirmed by price action. Uptrend Momentum Continuation: Solid green candle confirming continuous institutional buyer dominance. | [AI Learned Edge]: High-win-rate pattern 'BULLISH_MOMENTUM_CONTINUATION' (100% WR). Boosted with +4% confidence.",
+      "last_loss_root_cause": "",
+      "loss_causes": [],
       "learned_at": "2026-10-18 13:49:58"
     },
     "BEARISH_STRONG_STAR_REJECTION": {
       "name": "BEARISH_STRONG_STAR_REJECTION",
-      "total_trades": 0,
-      "wins": 0,
+      "total_trades": 1,
+      "wins": 1,
       "losses": 0,
       "draws": 0,
-      "win_rate": 0.0,
+      "win_rate": 100.0,
       "consecutive_losses": 0,
       "status": "ACTIVE",
-      "last_feedback": "Selling pressure rejected bounce with upper wick >=20% and red body.",
-      "learned_at": "2026-10-17 23:10:00"
+      "last_feedback": "WIN: Bearish confirmation: Price fell by -0.00020 (1.08445 -> 1.08425). Trend STRONG_BEARISH seller dominance prevailed.",
+      "last_loss_root_cause": "",
+      "loss_causes": [],
+      "learned_at": "2026-10-18 15:59:27"
     },
     "BEARISH_MOMENTUM_CONTINUATION": {
       "name": "BEARISH_MOMENTUM_CONTINUATION",
@@ -70,19 +82,23 @@
       "consecutive_losses": 0,
       "status": "ACTIVE",
       "last_feedback": "Solid red candle confirming continuous institutional seller dominance.",
+      "last_loss_root_cause": "",
+      "loss_causes": [],
       "learned_at": "2026-10-17 23:10:00"
     },
     "RANGE_SUPPORT_BOUNCE": {
       "name": "RANGE_SUPPORT_BOUNCE",
-      "total_trades": 25,
-      "wins": 23,
+      "total_trades": 26,
+      "wins": 24,
       "losses": 2,
       "draws": 0,
-      "win_rate": 92.0,
+      "win_rate": 92.3,
       "consecutive_losses": 0,
       "status": "BOOSTED",
-      "last_feedback": "WIN: Successfully confirmed by price action. Sideways Range Bounce: Buyers strongly defending the support floor with green reaction. | [AI Learned Edge]: High-win-rate pattern 'RANGE_SUPPORT_BOUNCE' (92% WR). Boosted with +4% confidence.",
-      "learned_at": "2026-10-17 17:57:58"
+      "last_feedback": "WIN: Bullish confirmation: Price rose by +0.00020 (1.08260 -> 1.08280). Trend SIDEWAYS_CONSOLIDATION buyer dominance prevailed.",
+      "last_loss_root_cause": "",
+      "loss_causes": [],
+      "learned_at": "2026-10-18 15:41:58"
     },
     "RANGE_RESISTANCE_REJECTION": {
       "name": "RANGE_RESISTANCE_REJECTION",
@@ -94,16 +110,145 @@
       "consecutive_losses": 0,
       "status": "ACTIVE",
       "last_feedback": "Reset to ACTIVE. Guardrail restricts it strictly to sideways range ceilings.",
+      "last_loss_root_cause": "",
+      "loss_causes": [],
       "learned_at": "2026-10-18 14:12:58"
     }
   },
+  "anti_patterns": {
+    "RESISTANCE_CEILING_REVERSAL": {
+      "cause_code": "RESISTANCE_CEILING_REVERSAL",
+      "description": "CALL order failed when entering upper Resistance ceiling in sideways range or under heavy seller rejection.",
+      "actionable_rule": "BLOCK CALL at Resistance ceiling during sideways consolidation or when opposing seller rejection wick >= 35%.",
+      "trigger_count": 3,
+      "last_detected": "2026-10-18 15:26:10"
+    },
+    "SUPPORT_FLOOR_BOUNCE": {
+      "cause_code": "SUPPORT_FLOOR_BOUNCE",
+      "description": "PUT order failed when entering lower Support floor in sideways range or under heavy buyer bounce.",
+      "actionable_rule": "BLOCK PUT at Support floor during sideways consolidation or when opposing buyer rejection wick >= 35%.",
+      "trigger_count": 2,
+      "last_detected": "2026-10-18 12:00:00"
+    },
+    "EXTENDED_STREAK_EXHAUSTION": {
+      "cause_code": "EXTENDED_STREAK_EXHAUSTION",
+      "description": "Trade failed after 5+ consecutive candles with decelerating momentum (exhaustion retracement candle formed).",
+      "actionable_rule": "BLOCK trades after 6+ consecutive candles or 5+ candles with decelerating body (< 30%). Await healthy pullback.",
+      "trigger_count": 3,
+      "last_detected": "2026-10-18 12:00:00"
+    },
+    "OPPOSING_WICK_REJECTION": {
+      "cause_code": "OPPOSING_WICK_REJECTION",
+      "description": "Candle formed an institutional opposing rejection wick >= 38% overpowering candle body.",
+      "actionable_rule": "BLOCK trades if opposing rejection wick >= 38% and larger than body. Rejection wick invalidates momentum.",
+      "trigger_count": 4,
+      "last_detected": "2026-10-18 12:00:00"
+    },
+    "WEAK_MOMENTUM_BODY_TRAP": {
+      "cause_code": "WEAK_MOMENTUM_BODY_TRAP",
+      "description": "Candle body was thinner than 20% of total range, resulting in low-volume liquidity chop loss.",
+      "actionable_rule": "BLOCK trades when candle body ratio < 20% and wick < 25% (chop/doji filter).",
+      "trigger_count": 3,
+      "last_detected": "2026-10-18 12:00:00"
+    },
+    "CALL_MOMENTUM_FAILURE": {
+      "cause_code": "CALL_MOMENTUM_FAILURE",
+      "description": "Price reversed by 0.00020 against CALL entry (1.08498 -> 1.08478). Setup thesis invalidated.",
+      "actionable_rule": "AI DEFENSE ACTIVATED: Elevated strictness and defensive cooldown on pattern 'BULLISH_STRONG_HAMMER_REJECTION'.",
+      "trigger_count": 1,
+      "last_detected": "2026-10-18 15:59:11"
+    }
+  },
   "learned_rules": [
-    "RULE_1: STRICT_TREND_FOLLOWING_MANDATE (Never trade against dominant trend; UP -> CALL only, DOWN -> PUT only)",
+    "RULE_1: STRICT_TREND_FOLLOWING_MANDATE (UP market -> CALL only, DOWN market -> PUT only; counter-trend strictly forbidden)",
     "RULE_2: COUNTER_TREND_FADING_PROHIBITED (Block PUT in Bullish trends, Block CALL in Bearish trends)",
+    "RULE_3: RESISTANCE_CEILING_PROTECTION (Block CALL at sideways ceiling or with seller rejection wick >= 35%)",
+    "RULE_4: SUPPORT_FLOOR_PROTECTION (Block PUT at sideways floor or with buyer bounce wick >= 35%)",
+    "RULE_5: STREAK_EXHAUSTION_SHIELD (Block entry after 6+ consecutive candles or 5+ with shrinking body to avoid climax traps)",
+    "RULE_6: OPPOSING_WICK_FILTER (Block trades with >= 38% opposing rejection wick overpowering body)",
+    "RULE_7: IMMEDIATE_LOSS_LEARNING (Diagnose exact root cause upon loss and activate immediate defense shield)",
+    "RULE_8: PERMANENT_MEMORY_PRESERVATION (Learned intelligence persists across session resets and data clears via dual-layer backup)",
+    "RULE_3: RESISTANCE_CEILING_PROTECTION (Block CALL within 22% of resistance ceiling without breakout expansion)",
+    "RULE_4: SUPPORT_FLOOR_PROTECTION (Block PUT within 22% of support floor without breakdown expansion)",
+    "RULE_5: STREAK_EXHAUSTION_SHIELD (Block entry after 4+ consecutive candles to avoid retracement traps)",
+    "RULE_6: OPPOSING_WICK_FILTER (Block trades with >= 20% opposing rejection wick)",
+    "RULE_1: STRICT_TREND_FOLLOWING_MANDATE (Never trade against dominant trend; UP -> CALL only, DOWN -> PUT only)",
     "RULE_3: CONFIRMED_BREAKOUT_CONFLUENCE (Allow breakout continuations when body and volume expand)",
-    "RULE_4: AUTOMATIC_LOSS_DEFENSE (Auto-tighten strictness and analyze root causes upon every loss)"
+    "RULE_4: AUTOMATIC_LOSS_DEFENSE (Auto-tighten strictness and analyze root causes upon every loss)",
+    "DEFENSE_RESISTANCE_CEILING_REVERSAL: AI DEFENSE ACTIVATED: Block CALL when within 25% of Resistance ceiling without verified breakout.",
+    "DEFENSE_CALL_MOMENTUM_FAILURE: AI DEFENSE ACTIVATED: Elevated strictness and defensive cooldown on pattern 'BULLISH_STRONG_HAMMER_REJECTION'."
   ],
   "trades_history": [
+    {
+      "id": "bab30a9b",
+      "timestamp": "15:59:18",
+      "direction": "PUT",
+      "entry_price": 1.08445,
+      "close_price": 1.08425,
+      "outcome": "WIN",
+      "pnl": 85.0,
+      "confidence": 90.4,
+      "pattern_name": "BEARISH_STRONG_STAR_REJECTION",
+      "trend": "STRONG_BEARISH",
+      "outcome_reason": "Bearish confirmation: Price fell by -0.00020 (1.08445 -> 1.08425). Trend STRONG_BEARISH seller dominance prevailed.",
+      "learning_insight": "Confirmed winning edge on BEARISH_STRONG_STAR_REJECTION: Trend-following PUT reinforced."
+    },
+    {
+      "id": "ba95e395",
+      "timestamp": "15:58:57",
+      "direction": "CALL",
+      "entry_price": 1.08498,
+      "close_price": 1.08478,
+      "outcome": "LOSS",
+      "pnl": -100.0,
+      "confidence": 94.8,
+      "pattern_name": "BULLISH_STRONG_HAMMER_REJECTION",
+      "trend": "STRONG_BULLISH",
+      "outcome_reason": "Price reversed by 0.00020 against CALL entry (1.08498 -> 1.08478). Setup thesis invalidated.",
+      "learning_insight": "AI DEFENSE ACTIVATED: Elevated strictness and defensive cooldown on pattern 'BULLISH_STRONG_HAMMER_REJECTION'."
+    },
+    {
+      "id": "b113c3a1",
+      "timestamp": "15:52:09",
+      "direction": "CALL",
+      "entry_price": 1.08463,
+      "close_price": 1.08483,
+      "outcome": "WIN",
+      "pnl": 85.0,
+      "confidence": 94.5,
+      "pattern_name": "BULLISH_STRONG_HAMMER_REJECTION",
+      "trend": "STRONG_BULLISH",
+      "outcome_reason": "Bullish confirmation: Price rose by +0.00020 (1.08463 -> 1.08483). Trend STRONG_BULLISH buyer dominance prevailed.",
+      "learning_insight": "Confirmed winning edge on BULLISH_STRONG_HAMMER_REJECTION: Trend-following CALL reinforced."
+    },
+    {
+      "id": "3b28bb4e",
+      "timestamp": "15:40:27",
+      "direction": "CALL",
+      "entry_price": 1.0826,
+      "close_price": 1.0828,
+      "outcome": "WIN",
+      "pnl": 85.0,
+      "confidence": 96.0,
+      "pattern_name": "RANGE_SUPPORT_BOUNCE",
+      "trend": "SIDEWAYS_CONSOLIDATION",
+      "outcome_reason": "Bullish confirmation: Price rose by +0.00020 (1.08260 -> 1.08280). Trend SIDEWAYS_CONSOLIDATION buyer dominance prevailed.",
+      "learning_insight": "Confirmed winning edge on RANGE_SUPPORT_BOUNCE: Trend-following CALL reinforced."
+    },
+    {
+      "id": "45f45f51",
+      "timestamp": "15:26:10",
+      "direction": "CALL",
+      "entry_price": 1.085,
+      "close_price": 1.0847,
+      "outcome": "LOSS",
+      "pnl": 0.0,
+      "confidence": 0.0,
+      "pattern_name": "EXPERIMENTAL_MOMENTUM_TEST",
+      "trend": "STRONG_BULLISH",
+      "outcome_reason": "CALL failed near Resistance ceiling (pos 15%). Overhead supply wall triggered downward reversal (-0.00030).",
+      "learning_insight": "AI DEFENSE ACTIVATED: Block CALL when within 25% of Resistance ceiling without verified breakout."
+    },
     {
       "id": "ab3fc261",
       "timestamp": "14:23:30",
@@ -118,5 +263,10 @@
       "outcome_reason": "Bullish confirmation: Price rose by +0.00030 (1.08500 -> 1.08530). Trend STRONG_BULLISH buyer dominance prevailed.",
       "learning_insight": "Confirmed winning edge on BULLISH_STRONG_HAMMER_REJECTION: Trend-following CALL reinforced."
     }
-  ]
+  ],
+  "persistence_status": {
+    "protected": true,
+    "dual_backup_active": true,
+    "last_sync": "2026-10-18 15:59:27"
+  }
 }

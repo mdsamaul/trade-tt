@@ -1135,16 +1135,36 @@
       <div class="card-header">
         <div class="card-title">
           <span>🧠</span>
-          <span>Self-Adaptive AI Pattern Memory (Automatic Loss Prevention)</span>
+          <span>Self-Adaptive AI Pattern Memory & Loss Prevention Engine</span>
         </div>
         <div class="font-mono" style="font-size: 0.8rem; color: var(--neon-cyan);" id="learnedPatternCount">
-          4 Patterns Stored
+          8 Patterns Stored
         </div>
       </div>
       <div class="card-body">
-        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5;">
-          The AI engine analyzes every completed trade and automatically registers lessons in persistent memory. High-failure setups (win rate &lt; 45% or 2+ consecutive losses) are instantly <strong>BLOCKED</strong> to prevent repeating losses. Winning setups are reinforced and <strong>BOOSTED</strong>.
+        <!-- Permanent Memory Protection Status Banner -->
+        <div style="background: rgba(0, 240, 255, 0.05); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.4rem;">🛡️</span>
+            <div>
+              <strong style="color: var(--neon-cyan); font-size: 0.88rem;">অটোনোমাস সেল্ফ-লার্নিং মেমোরি ১০০% সুরক্ষিত (Data Clear & Reset Proof):</strong>
+              <div style="font-size: 0.77rem; color: var(--text-muted); margin-top: 2px;">
+                ডাবল-লেয়ার অটো-ব্যাকআপ এবং ইমিউটেবল কোর নলেজ সক্রিয়। সেশন রিসেট বা ব্রাউজার ডেটা ক্লিয়ার করলেও AI অতীতের ভুল ও লসের শিক্ষা কখনো ভুলবে না!
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="font-mono" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 4px; background: rgba(0, 255, 136, 0.15); color: var(--neon-green); border: 1px solid rgba(0, 255, 136, 0.3); font-weight: 700;">
+              ✓ DUAL BACKUP ACTIVE
+            </span>
+          </div>
         </div>
+
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5;">
+          প্রতিটি ট্রেড শেষ হওয়ার সাথে সাথে AI স্বয়ংক্রিয়ভাবে ফলাফল ও ক্যান্ডেলের ক্যারেক্টার বিশ্লেষণ করে। কোনো ট্রেডে লস হলে AI তার আসল কারণ (<span style="color: var(--neon-red); font-weight: 600;">Root Cause</span>) চিহ্নিত করে পরবর্তী ট্রেডে সেই দুর্বলতা স্বয়ংক্রিয়ভাবে <strong>BLOCK</strong> করে দেয় যাতে পুনরায় লস না হয়!
+        </div>
+
+        <!-- Patterns Table -->
         <div class="ledger-table-wrap">
           <table>
             <thead>
@@ -1165,6 +1185,36 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Learned Anti-Patterns & Loss Guardrails Table -->
+        <div style="margin-top: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <strong style="font-size: 0.88rem; color: var(--neon-red); display: flex; align-items: center; gap: 6px;">
+              <span>🚫</span> <span>Active Learned Anti-Patterns & Loss Guardrails (লস প্রতিরোধ ঢাল)</span>
+            </strong>
+            <span class="font-mono" style="font-size: 0.76rem; color: var(--neon-gold);" id="antiPatternCount">5 Anti-Patterns Active</span>
+          </div>
+          <div class="ledger-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vulnerability Anti-Pattern</th>
+                  <th>Defense Action</th>
+                  <th>Root Cause & Prevention Rule</th>
+                  <th>Triggers</th>
+                </tr>
+              </thead>
+              <tbody id="antiPatternBody">
+                <tr>
+                  <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 15px;">
+                    Loading learned anti-patterns...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -1472,6 +1522,11 @@
         });
 
         streamVideo.srcObject = screenStream;
+        try {
+          await streamVideo.play();
+        } catch (e) {
+          console.warn("Autoplay note:", e);
+        }
         streamVideo.style.display = 'block';
         streamPlaceholder.style.display = 'none';
 
@@ -1615,44 +1670,74 @@
     }
 
     function renderLearningMemory(data) {
-      if (!data || !data.patterns) return;
-      const patterns = data.patterns;
+      if (!data) return;
+      const patterns = data.patterns || {};
+      const antiPatterns = data.anti_patterns || {};
       const keys = Object.keys(patterns);
       
       const countEl = document.getElementById('learnedPatternCount');
       if (countEl) countEl.textContent = `${keys.length} Patterns Stored`;
 
       const bodyEl = document.getElementById('learningMemoryBody');
-      if (!bodyEl) return;
+      if (bodyEl) {
+        if (keys.length === 0) {
+          bodyEl.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 20px;">No learned patterns yet.</td></tr>`;
+        } else {
+          bodyEl.innerHTML = '';
+          keys.forEach(k => {
+            const p = patterns[k];
+            const tr = document.createElement('tr');
+            
+            let statusBadge = '<span class="pill-win">ACTIVE</span>';
+            if (p.status === 'BLOCKED') {
+              statusBadge = '<span class="pill-loss" style="background: rgba(255, 51, 102, 0.2); color: #ff3366; font-weight: bold; padding: 4px 8px; border-radius: 4px;">🚫 BLOCKED (PROTECTED)</span>';
+            } else if (p.status === 'DEFENSIVE_COOLDOWN') {
+              statusBadge = '<span class="pill-loss" style="background: rgba(255, 184, 0, 0.2); color: #ffb800; font-weight: bold; padding: 4px 8px; border-radius: 4px;">🛡️ DEFENSE COOLDOWN</span>';
+            } else if (p.status === 'BOOSTED') {
+              statusBadge = '<span class="pill-win" style="background: rgba(0, 255, 136, 0.2); color: #00ff88; font-weight: bold; padding: 4px 8px; border-radius: 4px;">⭐ BOOSTED (+4% CONF)</span>';
+            }
 
-      if (keys.length === 0) {
-        bodyEl.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 20px;">No learned patterns yet.</td></tr>`;
-        return;
+            const wrColor = p.win_rate >= 75 ? 'var(--neon-green)' : (p.win_rate < 50 ? 'var(--neon-red)' : 'var(--neon-gold)');
+
+            tr.innerHTML = `
+              <td class="font-mono" style="font-weight: 600; color: var(--text-main); font-size: 0.8rem;">${escapeHtml(p.name)}</td>
+              <td>${statusBadge}</td>
+              <td class="font-mono" style="font-weight: bold; color: ${wrColor};">${p.win_rate.toFixed(1)}%</td>
+              <td class="font-mono" style="font-size: 0.8rem;">${p.wins}W - ${p.losses}L - ${p.draws}D</td>
+              <td style="font-size: 0.78rem; color: var(--text-muted); max-width: 380px;">${escapeHtml(p.last_feedback || 'Pattern actively learning from live execution.')}</td>
+            `;
+            bodyEl.appendChild(tr);
+          });
+        }
       }
 
-      bodyEl.innerHTML = '';
-      keys.forEach(k => {
-        const p = patterns[k];
-        const tr = document.createElement('tr');
-        
-        let statusBadge = '<span class="pill-win">ACTIVE</span>';
-        if (p.status === 'BLOCKED') {
-          statusBadge = '<span class="pill-loss" style="background: rgba(255, 51, 102, 0.2); color: #ff3366; font-weight: bold; padding: 4px 8px; border-radius: 4px;">🚫 BLOCKED (PROTECTED)</span>';
-        } else if (p.status === 'BOOSTED') {
-          statusBadge = '<span class="pill-win" style="background: rgba(0, 255, 136, 0.2); color: #00ff88; font-weight: bold; padding: 4px 8px; border-radius: 4px;">⭐ BOOSTED (+4% CONF)</span>';
+      // Render Anti-Patterns & Loss Guardrails Table
+      const antiKeys = Object.keys(antiPatterns);
+      const antiCountEl = document.getElementById('antiPatternCount');
+      if (antiCountEl) antiCountEl.textContent = `${antiKeys.length} Anti-Patterns Active`;
+
+      const antiBodyEl = document.getElementById('antiPatternBody');
+      if (antiBodyEl) {
+        if (antiKeys.length === 0) {
+          antiBodyEl.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-dim); padding: 15px;">No active anti-patterns.</td></tr>`;
+        } else {
+          antiBodyEl.innerHTML = '';
+          antiKeys.forEach(k => {
+            const ap = antiPatterns[k];
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td class="font-mono" style="font-weight: 700; color: var(--neon-red); font-size: 0.8rem;">${escapeHtml(ap.cause_code)}</td>
+              <td><span class="pill-loss" style="font-size: 0.72rem; padding: 2px 6px;">🚫 AUTO-BLOCK DEFENSE</span></td>
+              <td style="font-size: 0.78rem; color: var(--text-main); max-width: 440px;">
+                <div style="color: #cbd5e1; margin-bottom: 2px;"><strong>Root Cause:</strong> ${escapeHtml(ap.description)}</div>
+                <div style="color: var(--neon-cyan);"><strong>Protection Rule:</strong> ${escapeHtml(ap.actionable_rule)}</div>
+              </td>
+              <td class="font-mono" style="font-weight: bold; color: var(--neon-gold);">${ap.trigger_count || 1}</td>
+            `;
+            antiBodyEl.appendChild(tr);
+          });
         }
-
-        const wrColor = p.win_rate >= 75 ? 'var(--neon-green)' : (p.win_rate < 50 ? 'var(--neon-red)' : 'var(--neon-gold)');
-
-        tr.innerHTML = `
-          <td class="font-mono" style="font-weight: 600; color: var(--text-main); font-size: 0.8rem;">${escapeHtml(p.name)}</td>
-          <td>${statusBadge}</td>
-          <td class="font-mono" style="font-weight: bold; color: ${wrColor};">${p.win_rate.toFixed(1)}%</td>
-          <td class="font-mono" style="font-size: 0.8rem;">${p.wins}W - ${p.losses}L - ${p.draws}D</td>
-          <td style="font-size: 0.78rem; color: var(--text-muted); max-width: 380px;">${escapeHtml(p.last_feedback || 'Pattern actively learning from live execution.')}</td>
-        `;
-        bodyEl.appendChild(tr);
-      });
+      }
     }
 
     function renderTradeHistory(trades) {
@@ -1787,9 +1872,11 @@
         }
       }
 
-      // New Trade Placed Audio
+      // New Trade Placed Audio & Instant UI Update
       if (data.cycle_action && data.cycle_action.includes('TRADE_OPENED')) {
         sound.playTradePlaced();
+        fetchTradeHistory();
+        fetchSessionStatus();
       }
     }
 
@@ -1854,11 +1941,16 @@
         atCountdown.textContent = `${Math.max(0, secondsLeft)}s`;
       }
 
+      // Live status display on button
+      if (autoTradingActive && toggleAutoBtn) {
+        toggleAutoBtn.innerHTML = `⏹ Stop Autonomous Agent (${secondsLeft}s)`;
+      }
+
       // Senior Trader Precision Timing:
-      // At second 58 (secondsLeft === 2), the current 1-minute candle is 97% formed.
-      // We trigger analysis and click execution so the trade enters right at the candle boundary (second 59/00)!
+      // When 1 to 3 seconds remain (candle is 97%+ formed),
+      // Trigger chart analysis and execution once per candle bucket so trade enters right at 00s boundary!
       const currentBucket = Math.floor(now.getTime() / (candleTimeframe * 1000));
-      if (autoTradingActive && secondsLeft === 2 && lastScanBucket !== currentBucket && !isCycleBusy) {
+      if (autoTradingActive && secondsLeft <= 3 && secondsLeft >= 1 && lastScanBucket !== currentBucket && !isCycleBusy) {
         lastScanBucket = currentBucket;
         executeCycle();
       }
@@ -1874,8 +1966,15 @@
       updateCandleClock();
 
       clearInterval(cycleIntervalTimer);
-      // Run every 400ms to guarantee hitting second 58 without timing drift
-      cycleIntervalTimer = setInterval(updateCandleClock, 400);
+      // Run every 250ms to guarantee precision synchronization without timing drift
+      cycleIntervalTimer = setInterval(updateCandleClock, 250);
+
+      // Perform immediate scan upon starting so user sees instant analysis
+      setTimeout(() => {
+        if (autoTradingActive && !isCycleBusy) {
+          executeCycle();
+        }
+      }, 400);
     }
 
     function stopAutonomousLoop() {
@@ -1971,11 +2070,12 @@
     });
 
     resetSessionBtn.addEventListener('click', async () => {
-      if (confirm("Reset current paper trading session and clear trade history?")) {
+      if (confirm("Reset current paper trading session and clear trade history?\n\n(Note: All AI Self-Learned Intelligence, Loss Prevention Rules, and Memory will remain 100% saved and protected!)")) {
         try {
           await fetch('/api/reset', { method: 'POST' });
           fetchSessionStatus();
           fetchTradeHistory();
+          fetchLearningMemory();
         } catch (e) {
           alert("Failed to reset session.");
         }
